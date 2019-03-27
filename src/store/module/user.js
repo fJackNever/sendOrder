@@ -67,6 +67,7 @@ export default {
           // commit('setUserId', data.user_id)
           window.localStorage.setItem("ueiwrhifjbidfdasnf_companyId",res.data.data.company_id);
           window.localStorage.setItem("izuxbcniushdfdebfud_userName",res.data.data.name);
+          window.localStorage.setItem("izuxbcniushdfdebfud_permission",res.data.data.permission);
           resolve(res)
         }).catch(err => {
           reject(err)

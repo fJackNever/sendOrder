@@ -14,10 +14,74 @@ import {
 import { 
   checkLogin,
   uploadPic,
+  getIndexHost,
+  getIndexLists,
+  getDriverHost,
   getDriverLists,
   addDriver,
   editDriver,
   delDriver,
+  bindingCar,
+  unbindingCar,
+  authDriverStatus,
+  editDriverStatus,
+  getFleetLists,
+  addMemberToFleet,
+  removeMemberToFleet,
+  getCanJoinFleetDriverLists,
+  delFleet,
+  addFleet,
+  editFleet,
+  getOrderLists,
+  getOrderHost,
+  cancelOrder,
+  getOrderDriverLists,
+  getOrderInfo,
+  orderToDriver,
+  changeOrderToGrab,
+  checkOrderGetAmount,
+  addOrder,
+  editOrder,
+  getResaaignHost,
+  getReassignApplyLists,
+  reassignOrder,
+  rejectReassignApply,
+  getAbnormalHost,
+  getAbnormalOrderLists,
+  forcedEndOrder,
+  getSettleHost,
+  getSettleOrderLists,
+  preDriverSettle,
+  driverSettle,
+  getDriverReconciliayionLists,
+  createDriverReconciliation,
+  getDriverAmountLists,
+  rewardDriver,
+  fineDriver,
+  getDriverInoutLists,
+  getDriverWithdrawHost,
+  getDriverWithdrawLists,
+  manageDriverWithdraw,
+  rejectDriverWithdraw,
+  getCutsomerReconciliationHost,
+  createCustomerReconciliation,
+  getCustomerReconciliayionLists,
+  confirmCustomerReconciliation,
+  delCustomerReconciliation,
+  getFinanceHost,
+  getFinanceLists,
+  getCarLists,
+  addCar,
+  editCar,
+  delCar,
+  authCarStatus,
+  bindingDriver,
+  unbindingDriver,
+  getCustomerLists,
+  addCustomer,
+  editCustomer,
+  authCustomerStatus,
+  delCustomer,
   getCompanyBaseConfig,
   setCompanyBaseConfig,
   getLngLat,
@@ -34,15 +98,22 @@ import {
   editCarTemplate,
   delCarTemplate,
   getCarTemplateLists,
+  getTemplateHost,
   setCompanyOrderBaseConfig,
   getCompanyOrderBaseConfig,
   addOrderType,
   editOrderType,
   getOrderTypeLists,
+  setCompanySettleConfig,
+  getCompanySettleConfig,
   getPermissionLists,
   addAdminUser,
   editAdminUser,
+  editAdminUserNoPwdSuper,
+  editAdminUserSuper,
+  editAdminUserNoPwd,
   getAdminUserLists,
+  getAdminUserHost,
 } from '@/api/data'
 import router from '@/router'
 import routers from '@/router/routers'
@@ -67,12 +138,16 @@ export default {
     hasReadErrorPage: false,
     siderShow:false,
     access: '',
+    topMenuName:'1',
   },
   getters: {
     menuList: (state, getters, rootState) => getMenuByRouter(routers, rootState.app.access),
     errorCount: state => state.errorList.length
   },
   mutations: {
+    setMenuName (state, menuName) {
+      state.topMenuName = menuName
+    },
     setAccess (state, access) {
       state.access = access
     },
@@ -162,10 +237,38 @@ export default {
         })
       })
     },
-    //加盟司机
-    getDriverLists({ commit }, { id,status,city_id,start_time,end_time,id_name,telephone,auth_status,is_binding,is_server,search,offset,limit }) {
+    //首页工作台
+    getIndexHost({ commit }){
       return new Promise((resolve, reject) => {
-        getDriverLists({ id,status,city_id,start_time,end_time,id_name,telephone,auth_status,is_binding,is_server,search,offset,limit }).then(res => {
+        getIndexHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getIndexLists({ commit },{ start_time,end_time,date_type }){
+      return new Promise((resolve, reject) => {
+        getIndexLists({ start_time,end_time,date_type }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //加盟司机
+    getDriverHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getDriverHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getDriverLists({ commit }, { id,fleet_id,status,city_id,start_time,end_time,id_name,telephone,auth_status,is_binding,is_server,search,offset,limit }) {
+      return new Promise((resolve, reject) => {
+        getDriverLists({ id,fleet_id,status,city_id,start_time,end_time,id_name,telephone,auth_status,is_binding,is_server,search,offset,limit }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -193,6 +296,567 @@ export default {
     delDriver({ commit }, { id }){
       return new Promise((resolve, reject) => {
         delDriver({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    bindingCar({ commit }, { car_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        bindingCar({ car_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    unbindingCar({ commit }, { car_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        unbindingCar({ car_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    authDriverStatus({ commit }, { id,auth_status,is_server,auth_comment }){
+      return new Promise((resolve, reject) => {
+        authDriverStatus({ id,auth_status,is_server,auth_comment }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    editDriverStatus({ commit }, { id,status,server_comment }){
+      return new Promise((resolve, reject) => {
+        editDriverStatus({ id,status,server_comment }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //车队管理
+    getFleetLists({ commit }, { id,status,fleet_no,fleet_name,search,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getFleetLists({ id,status,fleet_no,fleet_name,search,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    addMemberToFleet({ commit }, { fleet_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        addMemberToFleet({ fleet_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    removeMemberToFleet({ commit }, { fleet_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        removeMemberToFleet({ fleet_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getCanJoinFleetDriverLists({ commit }, { search,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getCanJoinFleetDriverLists({ search,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    delFleet({ commit }, { id }){
+      return new Promise((resolve, reject) => {
+        delFleet({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    addFleet({ commit }, { fleet_name,comment,logo_path,max_member,status }){
+      return new Promise((resolve, reject) => {
+        addFleet({ fleet_name,comment,logo_path,max_member,status }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    editFleet({ commit }, { id,fleet_name,comment,logo_path,max_member,status }){
+      return new Promise((resolve, reject) => {
+        editFleet({ id,fleet_name,comment,logo_path,max_member,status }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //订单管理
+    getOrderHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getOrderHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getOrderLists({ commit }, { id,entity_id,customer_id,city_id,use_car_type_id,status,other_status,start_start_time,start_end_time,create_start_time,create_end_time,driver_name,customer_name,passenger_tel,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getOrderLists({ id,entity_id,customer_id,city_id,use_car_type_id,status,other_status,start_start_time,start_end_time,create_start_time,create_end_time,driver_name,customer_name,passenger_tel,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    cancelOrder({ commit }, { entity_id }){
+      return new Promise((resolve, reject) => {
+        cancelOrder({ entity_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getOrderDriverLists({ commit }, { order_id }){
+      return new Promise((resolve, reject) => {
+        getOrderDriverLists({ order_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getOrderInfo({ commit }, { order_id }){
+      return new Promise((resolve, reject) => {
+        getOrderInfo({ order_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    orderToDriver({ commit }, { entity_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        orderToDriver({ entity_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    changeOrderToGrab({ commit }, { entity_id }){
+      return new Promise((resolve, reject) => {
+        changeOrderToGrab({ entity_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    checkOrderGetAmount({ commit }, { order_type,use_car_type_id,city_id,customer_id,start_date,start_time,start_location,end_location }){
+      return new Promise((resolve, reject) => {
+        checkOrderGetAmount({ order_type,use_car_type_id,city_id,customer_id,start_date,start_time,start_location,end_location }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    addOrder({ commit }, { order_type,use_car_type_id,start_date,start_time,city_id,customer_id,start_address,start_location,end_address,end_location,plat_amount,amount,driver_amount,passenger_name,passenger_tel,comment,distance }){
+      return new Promise((resolve, reject) => {
+        addOrder({ order_type,use_car_type_id,start_date,start_time,city_id,customer_id,start_address,start_location,end_address,end_location,plat_amount,amount,driver_amount,passenger_name,passenger_tel,comment,distance }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    editOrder({ commit }, { id,order_type,use_car_type_id,start_date,start_time,city_id,customer_id,start_address,start_location,end_address,end_location,plat_amount,amount,driver_amount,passenger_name,passenger_tel,comment,distance }){
+      return new Promise((resolve, reject) => {
+        editOrder({ id,order_type,use_car_type_id,start_date,start_time,city_id,customer_id,start_address,start_location,end_address,end_location,plat_amount,amount,driver_amount,passenger_name,passenger_tel,comment,distance }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //改派订单
+    getResaaignHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getResaaignHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getReassignApplyLists({ commit }, { order_id,order_entity_id,city_id,reassign_manage_status,start_time,end_time,driver_name,customer_name,passenger_tel,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getReassignApplyLists({ order_id,order_entity_id,city_id,reassign_manage_status,start_time,end_time,driver_name,customer_name,passenger_tel,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    reassignOrder({ commit },{ entity_id }){
+      return new Promise((resolve, reject) => {
+        reassignOrder({ entity_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    rejectReassignApply({ commit },{ id }){
+      return new Promise((resolve, reject) => {
+        rejectReassignApply({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //异常订单
+    getAbnormalHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getAbnormalHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getAbnormalOrderLists({ commit }, { entity_id,status,city_id,driver_name,customer_name,start_start_time,start_end_time,create_start_time,create_end_time }){
+      return new Promise((resolve, reject) => {
+        getAbnormalOrderLists({ entity_id,status,city_id,driver_name,customer_name,start_start_time,start_end_time,create_start_time,create_end_time }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    forcedEndOrder({ commit },{ entity_id }){
+      return new Promise((resolve, reject) => {
+        forcedEndOrder({ entity_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //订单结算列表
+    getSettleHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getSettleHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getSettleOrderLists({ commit }, { id,order_entity_id,driver_name,customer_name,driver_tel,driver_settle_status,customer_settle_status,start_time,end_time,search,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getSettleOrderLists({ id,order_entity_id,driver_name,customer_name,driver_tel,driver_settle_status,customer_settle_status,start_time,end_time,search,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    preDriverSettle({ commit },{ id }){
+      return new Promise((resolve, reject) => {
+        preDriverSettle({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    driverSettle({ commit },{ id,order_amount,driver_amount,plat_amount,driver_settle_comment }){
+      return new Promise((resolve, reject) => {
+        driverSettle({ id,order_amount,driver_amount,plat_amount,driver_settle_comment }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //司机账单
+    getDriverReconciliayionLists({ commit },{ id,name,telephone,start_time,end_time,search,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getDriverReconciliayionLists({ id,name,telephone,start_time,end_time,search,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    createDriverReconciliation({ commit },{ driver_id,start_date,end_date }){
+      return new Promise((resolve, reject) => {
+        createDriverReconciliation({ driver_id,start_date,end_date }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //司机钱包
+    getDriverAmountLists({ commit }, { driver_id,id_name,telephone,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getDriverAmountLists({ driver_id,id_name,telephone,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    rewardDriver({ commit }, { driver_id,amount,body }){
+      return new Promise((resolve, reject) => {
+        rewardDriver({ driver_id,amount,body }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    fineDriver({ commit }, { driver_id,amount,body }){
+      return new Promise((resolve, reject) => {
+        fineDriver({ driver_id,amount,body }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getDriverInoutLists({ commit }, { driver_id,in_out,type,id_name,telephone,start_time,end_time,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getDriverInoutLists({ driver_id,in_out,type,id_name,telephone,start_time,end_time,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //司机提现
+    getDriverWithdrawHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getDriverWithdrawHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getDriverWithdrawLists({ commit }, { in_out_id,driver_id,withdraw_type,withdraw_status,id_name,telephone,start_time,end_time,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getDriverWithdrawLists({ in_out_id,driver_id,withdraw_type,withdraw_status,id_name,telephone,start_time,end_time,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    manageDriverWithdraw({ commit }, { id,withdraw_comment,withdraw_img_path }){
+      return new Promise((resolve, reject) => {
+        manageDriverWithdraw({ id,withdraw_comment,withdraw_img_path }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    rejectDriverWithdraw({ commit }, { id,withdraw_comment,withdraw_img_path }){
+      return new Promise((resolve, reject) => {
+        rejectDriverWithdraw({ id,withdraw_comment,withdraw_img_path }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //客户对账单
+    getCutsomerReconciliationHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getCutsomerReconciliationHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    createCustomerReconciliation({ commit }, { customer_id,start_date,end_date }){
+      return new Promise((resolve, reject) => {
+        createCustomerReconciliation({ customer_id,start_date,end_date }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getCustomerReconciliayionLists({ commit }, { id,name,telephone,pay_status,confirm_status,start_time,end_time,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getCustomerReconciliayionLists({ id,name,telephone,pay_status,confirm_status,start_time,end_time,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    confirmCustomerReconciliation({ commit }, { id }){
+      return new Promise((resolve, reject) => {
+        confirmCustomerReconciliation({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    delCustomerReconciliation({ commit }, { id }){
+      return new Promise((resolve, reject) => {
+        delCustomerReconciliation({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //财务记录
+    getFinanceHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getFinanceHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getFinanceLists({ commit }, { start_time,end_time,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getFinanceLists({ start_time,end_time,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //车辆列表
+    getCarLists({ commit }, { id,status,car_template_id,start_time,end_time,car_no,search,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getCarLists({ id,status,car_template_id,start_time,end_time,car_no,search,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    addCar({ commit }, { status,travel_img_path,car_no,owner,frame_no,engine_no,car_person_img_path,register_date,car_template_id,car_color }){
+      return new Promise((resolve, reject) => {
+        addCar({ status,travel_img_path,car_no,owner,frame_no,engine_no,car_person_img_path,register_date,car_template_id,car_color }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    editCar({ commit }, { id,status,travel_img_path,car_no,owner,frame_no,engine_no,car_person_img_path,register_date,car_template_id,car_color }){
+      return new Promise((resolve, reject) => {
+        editCar({ id,status,travel_img_path,car_no,owner,frame_no,engine_no,car_person_img_path,register_date,car_template_id,car_color }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    delCar({ commit }, { id }){
+      return new Promise((resolve, reject) => {
+        delCar({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    authCarStatus({ commit }, { id,status }){
+      return new Promise((resolve, reject) => {
+        authCarStatus({ id,status }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    bindingDriver({ commit }, { car_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        bindingDriver({ car_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    unbindingDriver({ commit }, { car_id,driver_id }){
+      return new Promise((resolve, reject) => {
+        unbindingDriver({ car_id,driver_id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //客户列表
+    getCustomerLists({ commit }, { id,status,type,start_time,end_time,name,telephone,contact,search,offset,limit }){
+      return new Promise((resolve, reject) => {
+        getCustomerLists({ id,status,type,start_time,end_time,name,telephone,contact,search,offset,limit }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    addCustomer({ commit }, { status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }){
+      return new Promise((resolve, reject) => {
+        addCustomer({ status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    editCustomer({ commit }, { id,status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }){
+      return new Promise((resolve, reject) => {
+        editCustomer({ id,status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    authCustomerStatus({ commit }, { id,status,auth_comment }){
+      return new Promise((resolve, reject) => {
+        authCustomerStatus({ id,status,auth_comment }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    delCustomer({ commit }, { id }){
+      return new Promise((resolve, reject) => {
+        delCustomer({ id }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -339,7 +1003,7 @@ export default {
         })
       })
     },
-
+    
     getCarTemplateLists({ commit }, { id,status,use_car_type_id,search,offset,limit }){
       return new Promise((resolve, reject) => {
         getCarTemplateLists({ id,status,use_car_type_id,search,offset,limit }).then(res => {
@@ -349,7 +1013,16 @@ export default {
         })
       })
     },
-
+    getTemplateHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getTemplateHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //订单基础配置
     setCompanyOrderBaseConfig({ commit }, { pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time }){
       return new Promise((resolve, reject) => {
         setCompanyOrderBaseConfig({ pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time }).then(res => {
@@ -369,7 +1042,7 @@ export default {
         })
       })
     },
-
+    //订单价格配置
     addOrderType({ commit }, { order_type,use_car_type_id,amount,status,limit_km,addition_amount, }){
       return new Promise((resolve, reject) => {
         addOrderType({ order_type,use_car_type_id,amount,status,limit_km,addition_amount, }).then(res => {
@@ -380,9 +1053,9 @@ export default {
       })
     },
 
-    editOrderType({ commit }, { id,order_type,use_car_type_id,amount,status }){
+    editOrderType({ commit }, { id,order_type,use_car_type_id,amount,status,limit_km,addition_amount }){
       return new Promise((resolve, reject) => {
-        editOrderType({ id,order_type,use_car_type_id,amount,status }).then(res => {
+        editOrderType({ id,order_type,use_car_type_id,amount,status,limit_km,addition_amount }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -399,7 +1072,26 @@ export default {
         })
       })
     },
-
+    //结算配置
+    setCompanySettleConfig({ commit }, { change_order_amount,plat_amount_type,plat_amount,customer_cancel_amount,customer_cancel_time,auto_settle,withdraw_type,withdraw_date,withdraw_start_time,withdraw_end_time }){
+      return new Promise((resolve, reject) => {
+        setCompanySettleConfig({ change_order_amount,plat_amount_type,plat_amount,customer_cancel_amount,customer_cancel_time,auto_settle,withdraw_type,withdraw_date,withdraw_start_time,withdraw_end_time }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getCompanySettleConfig({ commit }){
+      return new Promise((resolve, reject) => {
+        getCompanySettleConfig().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    //员工配置
     getPermissionLists({ commit }){
       return new Promise((resolve, reject) => {
         getPermissionLists().then(res => {
@@ -430,9 +1122,48 @@ export default {
       })
     },
 
+    editAdminUserNoPwdSuper({ commit }, { id,name,telephone,role,status, }){
+      return new Promise((resolve, reject) => {
+        editAdminUserNoPwdSuper({ id,name,telephone,role,status, }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+
+    editAdminUserSuper({ commit }, { id,name,telephone,role,password,status, }){
+      return new Promise((resolve, reject) => {
+        editAdminUserSuper({ id,name,telephone,role,password,status, }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+
+    editAdminUserNoPwd({ commit }, { id,name,telephone,role,permission,status, }){
+      return new Promise((resolve, reject) => {
+        editAdminUserNoPwd({ id,name,telephone,role,permission,status, }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+
     getAdminUserLists({ commit }, { id,status,search,offset,limit, }){
       return new Promise((resolve, reject) => {
         getAdminUserLists({ id,status,search,offset,limit, }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getAdminUserHost({ commit }){
+      return new Promise((resolve, reject) => {
+        getAdminUserHost().then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)

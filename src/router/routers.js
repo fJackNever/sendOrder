@@ -110,13 +110,13 @@ export default [
     component: Main,
     children: [
       {
-        path: 'newEditDriver',
-        name: 'newEditDriver',
+        path: 'newDriver',
+        name: 'newDriver',
         meta: {
           title: '新增加盟司机',
           menuType:2
         },
-        component: () => import('@/view/driver/driverManage/newEditDriver.vue')
+        component: () => import('@/view/driver/driverManage/newDriver.vue')
       },
     ]
   },
@@ -125,24 +125,46 @@ export default [
     path: '/league',
     name: 'league',
     meta: {
-      hideInBread: true,
+      hideInMenu: true,
       access:['leagueCheck'],
       requireIsLogin: true,
     },
     component: Main,
     children: [
       {
-        path: 'expandManage',
-        name: 'expandManage',
+        path: 'editDriver',
+        name: 'editDriver',
         meta: {
-          icon: 'md-megaphone',
-          title: '加盟推广',
+          title: '修改加盟司机',
           menuType:2
         },
-        component: () => import('@/view/driver/expandManage/expandManage.vue')
+        component: () => import('@/view/driver/driverManage/editDriver.vue')
       },
     ]
   },
+
+  // {
+  //   path: '/league',
+  //   name: 'league',
+  //   meta: {
+  //     hideInBread: true,
+  //     access:['leagueCheck'],
+  //     requireIsLogin: true,
+  //   },
+  //   component: Main,
+  //   children: [
+  //     {
+  //       path: 'expandManage',
+  //       name: 'expandManage',
+  //       meta: {
+  //         icon: 'md-megaphone',
+  //         title: '加盟推广',
+  //         menuType:2
+  //       },
+  //       component: () => import('@/view/driver/expandManage/expandManage.vue')
+  //     },
+  //   ]
+  // },
 
   {
     path: '/league',
@@ -178,13 +200,35 @@ export default [
     component: Main,
     children: [
       {
-        path: 'newEditMotorcade',
-        name: 'newEditMotorcade',
+        path: 'newMotorcade',
+        name: 'newMotorcade',
         meta: {
           title: '创建车队',
           menuType:2
         },
-        component: () => import('@/view/driver/motorcadeManage/newEditMotorcade.vue')
+        component: () => import('@/view/driver/motorcadeManage/newMotorcade.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/league',
+    name: 'league',
+    meta: {
+      hideInMenu: true,
+      access:['leagueCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'editMotorcade',
+        name: 'editMotorcade',
+        meta: {
+          title: '修改车队',
+          menuType:2
+        },
+        component: () => import('@/view/driver/motorcadeManage/editMotorcade.vue')
       },
     ]
   },
@@ -212,28 +256,28 @@ export default [
   },
   
 
-  {
-    path: '/league',
-    name: 'league',
-    meta: {
-      hideInBread: true,
-      access:['leagueCheck'],
-      requireIsLogin: true,
-    },
-    component: Main,
-    children: [
-      {
-        path: 'driverLocation',
-        name: 'driverLocation',
-        meta: {
-          icon: 'ios-contact-outline',
-          title: '司机位置状态',
-          menuType:2
-        },
-        component: () => import('@/view/driver/driverLocation/driverLocation.vue')
-      },
-    ]
-  },
+  // {
+  //   path: '/league',
+  //   name: 'league',
+  //   meta: {
+  //     hideInBread: true,
+  //     access:['leagueCheck'],
+  //     requireIsLogin: true,
+  //   },
+  //   component: Main,
+  //   children: [
+  //     {
+  //       path: 'driverLocation',
+  //       name: 'driverLocation',
+  //       meta: {
+  //         icon: 'ios-contact-outline',
+  //         title: '司机位置状态',
+  //         menuType:2
+  //       },
+  //       component: () => import('@/view/driver/driverLocation/driverLocation.vue')
+  //     },
+  //   ]
+  // },
 
   {
     path: '/indent',
@@ -269,13 +313,35 @@ export default [
     component: Main,
     children: [
       {
-        path: 'new_edit_indent',
-        name: 'new_edit_indent',
+        path: 'new_indent',
+        name: 'new_indent',
         meta: {
           title: '新增订单',
           menuType:3
         },
-        component: () => import('@/view/indent/indentManage/new_edit_indent.vue')
+        component: () => import('@/view/indent/indentManage/new_indent.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/indent',
+    name: 'indent',
+    meta: {
+      hideInMenu: true,
+      access:['indentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'edit_indent',
+        name: 'edit_indent',
+        meta: {
+          title: '修改订单',
+          menuType:3
+        },
+        component: () => import('@/view/indent/indentManage/edit_indent.vue')
       },
     ]
   },
@@ -329,6 +395,28 @@ export default [
     path: '/indent',
     name: 'indent',
     meta: {
+      hideInMenu: true,
+      access:['indentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'reassign_detail',
+        name: 'reassign_detail',
+        meta: {
+          title: '改派详情',
+          menuType:3
+        },
+        component: () => import('@/view/indent/indentManage/reassign_detail.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/indent',
+    name: 'indent',
+    meta: {
       hideInBread: true,
       access:['indentCheck'],
       requireIsLogin: true,
@@ -343,7 +431,29 @@ export default [
           title: '异常订单',
           menuType:3
         },
-        component: () => import('@/view/indent/indentManage/unusual_indent.vue')
+        component: () => import('@/view/indent/indentManage/unusual/unusual_indent.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/indent',
+    name: 'indent',
+    meta: {
+      hideInMenu: true,
+      access:['indentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'check_unusual',
+        name: 'check_unusual',
+        meta: {
+          title: '查看异常订单',
+          menuType:3
+        },
+        component: () => import('@/view/indent/indentManage/unusual/check_unusual.vue')
       },
     ]
   },
@@ -398,6 +508,29 @@ export default [
     path: '/count',
     name: 'count',
     meta: {
+      hideInMenu: true,
+      access:['countCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'driver_bill_detail',
+        name: 'driver_bill_detail',
+        meta: {
+          icon: 'ios-paper-outline',
+          title: '司机账单详情',
+          menuType:4
+        },
+        component: () => import('@/view/count/countManage/driver_bill_detail.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/count',
+    name: 'count',
+    meta: {
       hideInBread: true,
       access:['countCheck'],
       requireIsLogin: true,
@@ -421,6 +554,30 @@ export default [
     path: '/count',
     name: 'count',
     meta: {
+      hideInMenu: true,
+      access:['countCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'get_pay_detail',
+        name: 'get_pay_detail',
+        meta: {
+          icon: 'logo-yen',
+          title: '司机收支详情',
+          menuType:4
+        },
+        component: () => import('@/view/count/countManage/get_pay_detail.vue')
+      },
+    ]
+  },
+  
+
+  {
+    path: '/count',
+    name: 'count',
+    meta: {
       hideInBread: true,
       access:['countCheck'],
       requireIsLogin: true,
@@ -436,6 +593,29 @@ export default [
           menuType:4
         },
         component: () => import('@/view/count/countManage/withdraw.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/count',
+    name: 'count',
+    meta: {
+      hideInMenu: true,
+      access:['countCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'withdraw_detail',
+        name: 'withdraw_detail',
+        meta: {
+          icon: 'logo-yen',
+          title: '司机提现详情',
+          menuType:4
+        },
+        component: () => import('@/view/count/countManage/withdraw_detail.vue')
       },
     ]
   },
@@ -542,13 +722,35 @@ export default [
     component: Main,
     children: [
       {
-        path: 'new_edit_vehicle',
-        name: 'new_edit_vehicle',
+        path: 'new_vehicle',
+        name: 'new_vehicle',
         meta: {
           title: '新增车辆',
           menuType:5
         },
-        component: () => import('@/view/vehicle/vehicleManage/new_edit_vehicle.vue')
+        component: () => import('@/view/vehicle/vehicleManage/new_vehicle.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/vehicle',
+    name: 'vehicle',
+    meta: {
+      hideInMenu: true,
+      access:['vehicleCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'edit_vehicle',
+        name: 'edit_vehicle',
+        meta: {
+          title: '修改车辆',
+          menuType:5
+        },
+        component: () => import('@/view/vehicle/vehicleManage/edit_vehicle.vue')
       },
     ]
   },
@@ -609,13 +811,13 @@ export default [
     component: Main,
     children: [
       {
-        path: 'new_edit_customer',
-        name: 'new_edit_customer',
+        path: 'new_customer',
+        name: 'new_customer',
         meta: {
           title: '新增客户',
           menuType:6
         },
-        component: () => import('@/view/customer/customerManage/new_edit_customer.vue')
+        component: () => import('@/view/customer/customerManage/new_customer.vue')
       },
     ]
   },
@@ -624,47 +826,69 @@ export default [
     path: '/customer',
     name: 'customer',
     meta: {
-      hideInBread: true,
+      hideInMenu: true,
       access:['customerCheck'],
       requireIsLogin: true,
     },
     component: Main,
     children: [
       {
-        path: 'customerRecruit',
-        name: 'customerRecruit',
+        path: 'edit_customer',
+        name: 'edit_customer',
         meta: {
-          icon: 'md-add',
-          title: '客户招募',
+          title: '修改客户',
           menuType:6
         },
-        component: () => import('@/view/customer/customerManage/customerRecruit.vue')
+        component: () => import('@/view/customer/customerManage/edit_customer.vue')
       },
     ]
   },
 
-  {
-    path: '/customer',
-    name: 'customer',
-    meta: {
-      hideInBread: true,
-      access:['customerCheck'],
-      requireIsLogin: true,
-    },
-    component: Main,
-    children: [
-      {
-        path: 'customerAudit',
-        name: 'customerAudit',
-        meta: {
-          icon: 'ios-search',
-          title: '客户审核',
-          menuType:6
-        },
-        component: () => import('@/view/customer/customerManage/customerAudit.vue')
-      },
-    ]
-  },
+  // {
+  //   path: '/customer',
+  //   name: 'customer',
+  //   meta: {
+  //     hideInBread: true,
+  //     access:['customerCheck'],
+  //     requireIsLogin: true,
+  //   },
+  //   component: Main,
+  //   children: [
+  //     {
+  //       path: 'customerRecruit',
+  //       name: 'customerRecruit',
+  //       meta: {
+  //         icon: 'md-add',
+  //         title: '客户招募',
+  //         menuType:6
+  //       },
+  //       component: () => import('@/view/customer/customerManage/customerRecruit.vue')
+  //     },
+  //   ]
+  // },
+
+  // {
+  //   path: '/customer',
+  //   name: 'customer',
+  //   meta: {
+  //     hideInBread: true,
+  //     access:['customerCheck'],
+  //     requireIsLogin: true,
+  //   },
+  //   component: Main,
+  //   children: [
+  //     {
+  //       path: 'customerAudit',
+  //       name: 'customerAudit',
+  //       meta: {
+  //         icon: 'ios-search',
+  //         title: '客户审核',
+  //         menuType:6
+  //       },
+  //       component: () => import('@/view/customer/customerManage/customerAudit.vue')
+  //     },
+  //   ]
+  // },
 
   {
     path: '/configure',

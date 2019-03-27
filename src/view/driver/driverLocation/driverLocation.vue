@@ -3,12 +3,14 @@
       <Card shadow title="司机位置" style="margin-top:10px;">
         <span style="font-size:14px;padding-right:10px;">城市</span>
         <Select v-model="citySelected" style="width:150px;margin-right:10px;" transfer>
-            <Option v-for="(item,key) in cityOptions" :value="item.value" :key="item.value">{{ item.label }}</Option>
+            <Option :value="-1">全部</Option>
+            <Option v-for="(item,index) in city_arr" :value="item.id" :key="index">{{ item.city }}</Option>
         </Select>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">车队</span>
-        <Select v-model="teamSelected" style="width:150px;margin-right:10px;" transfer>
-            <Option v-for="(item,key) in teamOptions" :value="item.value" :key="item.value">{{ item.label }}</Option>
+        <Select v-model="carTeamSelected" style="width:150px;margin-right:10px;" transfer>
+            <Option :value="-1">全部</Option>
+            <Option v-for="(item,index) in carTeamOptions" :value="item.id" :key="index">{{ item.fleet_name }}</Option>
         </Select>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">上线状态</span>
@@ -23,20 +25,17 @@
         <span style="font-size:14px;padding-right:10px;">司机姓名</span>
         <AutoComplete
         v-model="driverName"
-        :data="driverGather"
         @on-search="searchName"
+        @on-select="selectName"
         placeholder="请输入司机姓名"
-        style="width:200px" transfer></AutoComplete>
+        style="width:200px" transfer>
+            <Option v-for="(item,index) in driverGather" :value="item.id" :key="index" >{{ item.id_name }}</Option>
+        </AutoComplete>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">司机手机号</span>
-        <AutoComplete
-        v-model="driverPhone"
-        :data="phoneGather"
-        @on-search="searchPhone"
-        placeholder="请输入司机手机号"
-        style="width:200px" transfer></AutoComplete>
+        <Input v-model="driverPhone" placeholder="请输入司机手机号" style="width:200px"></Input>
 
-        <Button type="success" style="margin-left:30px;">查询</Button>
+        <Button type="success" style="margin-left:30px;" >查询</Button>
       </Card>
       <Row :gutter="16" style="background:#fff;margin:10px 0;">
         <Col span="20">
@@ -115,16 +114,10 @@ export default {
   data () {
     return {
       driverLogo,
-      citySelected:'',
-      cityOptions:[
-        {label:'上海',value:1},
-        {label:'南京',value:2}
-      ],
-      teamSelected:'',
-      teamOptions:[
-        {label:'车队1',value:1},
-        {label:'车队2',value:2}
-      ],
+      citySelected:-1,
+      city_arr:[],
+      carTeamSelected:-1,
+      carTeamOptions:[],
       statusSelected:1,
       statusOptions:[
         {label:'全部',value:1},
@@ -137,10 +130,36 @@ export default {
       driverData:[
         { name:'张三',location:'浦东大道浦东大道浦东大道浦东大道浦东大道'},
         { name:'黎明',location:'浦东新区'}
-      ]
+      ],
+      inputNameShake:'',
+      driverName:'',
+      driverGather:[],
+      driverPhone:'',
     }
   },
   methods: {
+    ...mapActions([
+      'getCompanyCityLists',
+      'getFleetLists',
+      'getDriverLists',
+    ]),
+    searchName(value){
+      if(this.inputNameShake) clearTimeout(this.inputNameShake)
+        this.inputNameShake = setTimeout(()=>{
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:value,telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+                this.driverGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.driverGather,i,data.data.data.rows[i])
+                }
+            })
+        },600)
+    },
+    selectName(val){
+        this.getDriverLists({ id:val,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.driverName = data.data.data.rows[0].id_name
+            this.driverPhone = data.data.data.rows[0].telephone
+        })
+    },
     handleSubmit (name) {
         this.$refs[name].validate((valid) => {
             if (valid) {
@@ -152,7 +171,33 @@ export default {
     },
   },
   mounted () {
-      //console.log(this.$route.query.id)
+    this.getCompanyCityLists({ id:'',search:'',offset:0,limit:10,status:1 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.city_arr,i,data.data.data.rows[i])
+        }
+    })
+
+    this.getFleetLists({ id:'',status:1,fleet_no:'',fleet_name:'',search:'',offset:0,limit:10000 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.carTeamOptions,i,data.data.data.rows[i])
+        }
+    })
+
+  },
+  activated () {
+
+    this.getCompanyCityLists({ id:'',search:'',offset:0,limit:10,status:1 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.city_arr,i,data.data.data.rows[i])
+        }
+    })
+
+    this.getFleetLists({ id:'',status:1,fleet_no:'',fleet_name:'',search:'',offset:0,limit:10000 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.carTeamOptions,i,data.data.data.rows[i])
+        }
+    })
+
   }
 }
 </script>
@@ -161,5 +206,9 @@ export default {
 .bm-view {
   width: 100%;
   height: 700px;
+}
+.ant-card-grid{
+  cursor:pointer;
+  border-bottom: 1px solid #e8eaec;
 }
 </style>

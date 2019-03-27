@@ -2,6 +2,10 @@
   <div style="padding:0 24px 24px;">
       <Card shadow :title="cardTitle" style="margin-top:10px;">
             <Form ref="formValidate" :model="formValidate" :rules="ruleValidate" :label-width="160" >
+                
+                <FormItem label="公司编号" prop="entity_id" :label-width="120">
+                    <Input v-model="formValidate.entity_id" placeholder="请输入公司编号" style="width:200px" disabled></Input>
+                </FormItem>
 
                 <FormItem label="公司名称" prop="company_name" :label-width="120">
                     <Input v-model="formValidate.company_name" placeholder="请输入公司名称" style="width:200px"></Input>
@@ -14,6 +18,10 @@
                 <FormItem label="公司地址" prop="address" :label-width="120">
                     <Input v-model="formValidate.address" placeholder="请输入公司地址" style="width:200px"></Input>
                     <Icon type="ios-pin" :size="25" style="margin-left:10px;cursor:pointer;" @click="showAddress()"/>
+                </FormItem>
+
+                <FormItem label="客服电话" prop="service_tel" :label-width="120">
+                    <Input v-model="formValidate.service_tel" placeholder="请输入公司电话" style="width:200px"></Input>
                 </FormItem>
 
                 <FormItem label="公司营业执照" prop="operatePic" :label-width="120">
@@ -185,6 +193,7 @@ export default {
                 address_location:JSON.stringify(address_lng_lat),
                 bussiness_path:this.operateList[0].url || '',
                 introduction:this.formValidate.introduction || '',
+                service_tel:this.formValidate.service_tel || '',
                 }).then((data) => {
                 if(data.data.code === 1){
                     this.$Message.success('保存成功!');
@@ -209,12 +218,15 @@ export default {
             }
             
             if(data.data.data.address_location){
-                let obj = data.data.data.address_location.parseJSON()
+                let obj = JSON.parse(data.data.data.address_location)
                 this.$set(this.conpany_address,0,obj.longitude)
                 this.$set(this.conpany_address,1,obj.latitude)
             }
 
             this.$set(this.formValidate,'introduction',data.data.data.introduction || '')
+            this.$set(this.formValidate,'service_tel',data.data.data.service_tel || '')
+            this.$set(this.formValidate,'entity_id',data.data.data.entity_id || '')
+            
         }else if(data.data.code === 0){
             this.$Notice.warning({
                 title: '嘀友提醒',
@@ -234,12 +246,15 @@ export default {
             }
 
             if(data.data.data.address_location){
-                let obj = data.data.data.address_location.parseJSON()
+                let obj = JSON.parse(data.data.data.address_location)
                 this.$set(this.conpany_address,0,obj.longitude)
                 this.$set(this.conpany_address,1,obj.latitude)
             }
 
             this.$set(this.formValidate,'introduction',data.data.data.introduction || '')
+            this.$set(this.formValidate,'service_tel',data.data.data.service_tel || '')
+            this.$set(this.formValidate,'entity_id',data.data.data.entity_id || '')
+            
         }else if(data.data.code === 0){
             this.$Notice.warning({
                 title: '嘀友提醒',

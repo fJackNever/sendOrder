@@ -197,51 +197,6 @@ export default {
     list:{
       //深度监听，可监听到对象、数组的变化
         handler(val, oldVal){
-          val.map((item,index)=>{
-            if(item.name === "newEditDriver"){
-              if(item.query.id){
-                item.meta.title = '修改加盟司机'
-              }
-            }else if(item.name === "newEditTask"){
-              if(item.query.id){
-                item.meta.title = '修改自定义任务'
-              }
-            }else if(item.name === "newEditTaskType"){
-              if(item.query.id){
-                item.meta.title = '修改自定义任务类型'
-              }
-            }else if(item.name === "newEditPage"){
-              if(item.query.id){
-                item.meta.title = '修改自定义页面'
-              }
-            }else if(item.name === "newEditApproveCM"){
-              if(item.query.id){
-                item.meta.title = '修改认证车辆品牌车型'
-              }
-            }else if(item.name === "newEditDriverType"){
-              if(item.query.id){
-                item.meta.title = '修改司机自定义类型'
-              }
-            }else if(item.name === "newEditMotorcade"){
-              if(item.query.id){
-                item.meta.title = '修改车队'
-              }
-            }else if(item.name === "new_edit_indent"){
-              if(item.query.id){
-                item.meta.title = '修改订单'
-              }
-            }else if(item.name === "new_edit_vehicle"){
-              if(item.query.id){
-                item.meta.title = '编辑车辆'
-              }
-            }else if(item.name === "new_edit_customer"){
-              if(item.query.id){
-                item.meta.title = '编辑客户'
-              }
-            }
-            
-            
-          })
         },
         deep:true
     },

@@ -25,25 +25,10 @@
                         <InputNumber :min="0" v-model="formValidate.indentMoney"></InputNumber>
                     </FormItem>
 
-                    <FormItem label="支付状态" prop="payStatus">
-                        <Input v-model="formValidate.payStatus" placeholder="请输入支付状态" style="width:200px"></Input>
-                    </FormItem>
-
-                    <FormItem label="确认状态" prop="confirmStatus">
-                        <Input v-model="formValidate.confirmStatus" placeholder="请输入确认状态" style="width:200px"></Input>
-                    </FormItem>
-
-                    <FormItem label="凭证单号" prop="evidenceBill">
-                        <Input v-model="formValidate.evidenceBill" placeholder="请输入凭证单号" style="width:200px"></Input>
-                    </FormItem>
-
                 </Form>
             </Col>
             <Col span="12">
                 <Form ref="formValidate" :model="formValidate" :label-width="80" >
-                    <FormItem label="办理人" prop="transactPer">
-                        <Input v-model="formValidate.transactPer" placeholder="请输入办理人" style="width:200px"></Input>
-                    </FormItem>
 
                     <FormItem label="客户电话" prop="cusPhone">
                         <Input v-model="formValidate.cusPhone" placeholder="请输入客户电话" style="width:200px"></Input>
@@ -53,48 +38,59 @@
                         <Input v-model="formValidate.cusAddress" placeholder="请输入客户地址" style="width:200px"></Input>
                     </FormItem>
 
-                    <FormItem label="交易凭证" prop="evidencePic" >
-                        <div class="demo-upload-list" v-for="item in evidenceList">
-                            <img :src="item.url">
-                            <div class="demo-upload-list-cover">
-                                <Icon type="ios-eye-outline" @click.native="handleView(item.url)"></Icon>
-                            </div>
-                        </div>
-                        <Upload
-                            ref="evidenceUpload"
-                            :show-upload-list="false"
-                            :format="['jpg','jpeg','png']"
-                            :on-format-error="handleFormatError"
-                            :before-upload="handleEvidence"
-                            type="drag"
-                            action=""
-                            :style="{display: evidenceList.length === 1 ? 'none' : 'inline-block' ,width:'58px'}">
-                            <div style="width: 58px;height:58px;line-height: 58px;">
-                                <Icon type="ios-camera" size="20"></Icon>
-                            </div>
-                        </Upload>
+                    <FormItem label="支付状态" prop="payStatus">
+                        <Input v-model="formValidate.payStatus" placeholder="请输入支付状态" style="width:200px"></Input>
                     </FormItem>
-                    <Modal title="图片预览" v-model="visible" :footer-hide="true">
-                        <img :src="allPicModal" v-if="visible" style="width: 100%">
-                    </Modal>
 
-                    <FormItem label="摘要" prop="desc" style="width:400px;">
-                        <Input v-model="formValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入摘要"></Input>
+                    <FormItem label="确认状态" prop="confirmStatus">
+                        <Input v-model="formValidate.confirmStatus" placeholder="请输入确认状态" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem>
-                        <Button type="primary" @click="handleSubmit('formValidate')">确认收款</Button>
+                        <Button type="primary" @click="handleSubmit('formValidate')" v-if="btn_show">确认收款</Button>
                     </FormItem>
                 </Form>
             </Col>
         </Row>
       </Card>
+      
+      <Card shadow title="对账单" class="indentCard">
+        <div slot="extra">
+            <Button type="primary" @click="exportData">导出</Button>
+        </div>
+
+        <div class="indext_detail" >
+
+            <span class="indentTitle">客户名称:</span>
+            <span class="indentData">{{driver_name}}</span>
+
+            <span class="indentTitle">对账日期:</span>
+            <span class="indentData">{{start_date}} - {{end_date}}</span>
+
+            <span class="indentTitle">总订单数:</span>
+            <span class="indentData">{{total_indent}}</span>
+
+            <span class="indentTitle">总计金额</span>
+            <span class="indentData">{{total_money}}</span>
+
+            <Divider />
+        </div>
+
+        <Table border :columns="order_columns" :data="order_data">
+            <template slot-scope="{ row }" slot="name">
+                <strong>{{ row.name }}</strong>
+            </template>
+        </Table>
+        <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
+    </Card>
+
   </div>
 </template>
 
 <script>
-import { Row,Col,Card,Input,Button,DatePicker,Table,AutoComplete,Form,FormItem,Modal,Icon,InputNumber,Upload, } from 'iview'
+import { Row,Col,Card,Input,Button,DatePicker,Table,AutoComplete,Form,FormItem,Modal,Icon,InputNumber,Upload,Divider } from 'iview'
 import { mapActions } from 'vuex'
+import FileSaver from 'file-saver';
 export default {
   name: 'edit_count',
   components: {
@@ -112,66 +108,232 @@ export default {
     Icon,
     InputNumber,
     Upload,
+    Divider
   },
   data () {
     return {
+        btn_show:true,
       cardTitle:'客户对账单详情',
-      formValidate: {},
+      formValidate: {
+          accountDate:['','']
+      },
+      order_data:[],
+      order_columns: [
+            {
+                title: '订单开始日期',
+                key: 'start_date'
+            },
+            {
+                title: '订单起点',
+                key: 'start_address'
+            },
+            {
+                title: '订单终点',
+                key: 'end_address'
+            },
+            {
+                title: '订单价格',
+                key: 'amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.amount/100),
+                    ]);
+                }
+            },
+            {
+                title: '乘客',
+                key: 'passenger_name'
+            },
+        ],
       evidenceList:[],
       visible:false,
+      driver_name:'',
+      start_date:'',
+      end_date:'',
+      total_indent:'',
+      total_money:'',
+      pageTotal:0,
+      pageSize:10,
+      pageCurrent:1,
+      permission_arr:''
     }
   },
   methods: {
+    ...mapActions([
+      'getCustomerReconciliayionLists',
+      'confirmCustomerReconciliation',
+    ]),
+    exportData(){
+        this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:1000000 }).then((data) => {
+            let result = data.data.data.rows[0].settles;
+            result.push({
+                start_date:'客户名称: '+ data.data.data.rows[0].name,
+                start_address:'对账日期: '+ data.data.data.rows[0].start_date + ' 至 ' + data.data.data.rows[0].end_date,
+                end_address:'总订单数: '+ data.data.data.rows[0].count_order,
+                amount:'总计金额: '+ data.data.data.rows[0].count_amount/100,
+                passenger_name:''
+            })
+            let str = '订单开始日期,订单起点,订单终点,订单价格,乘客';
+            for (let i=0; i<result.length; i++) {
+                if(i === result.length-1){
+                    str += '\n' +
+                    result[i].start_date + ',' +
+                    result[i].start_address + ',' +
+                    result[i].end_address + ',' +
+                    result[i].amount + ',' +
+                    result[i].passenger_name
+                }else{
+                    str += '\n' +
+                    result[i].start_date + ',' +
+                    result[i].start_address + ',' +
+                    result[i].end_address + ',' +
+                    result[i].amount/100 + ',' +
+                    result[i].passenger_name
+                }
+            }
+            let exportContent = "\uFEFF";
+            let blob = new Blob([exportContent + str], {
+                type: "text/plain;charset=utf-8"
+            });
+            FileSaver.saveAs(blob, "客户对账单列表.xls");
 
-    handleView (url) {
-        this.allPicModal = url;
-        this.visible = true;
-    },
-    handleFormatError (file) {
-        this.$Notice.warning({
-            title: '图片提醒',
-            desc: '请选择.jpg，.jpeg 或 .png图片'
-        });
-    },
-    handleEvidence (file) {
-        // let check = this.idFrontList.length < 2;
-        // if (!check) {
-        //     this.$Notice.warning({
-        //         title: '只能上传一张图片'
-        //     });
-        // }else{
-        //     let reader = new FileReader();
-        //     reader.readAsDataURL(file);
-        //     reader.onloadend = () => {
-        //         let base64Img = reader.result.split('base64,')[1];
-        //         this.idFrontBase64 = base64Img;
-        //         this.uploadPic({ base64Img }).then(res => {
-        //             this.$set(this.idFrontList,0, {
-        //                 url:res.data.data.path,
-        //                 name:'idFrontPic' + res.data.data.ossId,
-        //             })
-        //         })
-        //     };
-        // }
+        })
         
-        // return check;
     },
-
+    changePage(page){
+        this.pageCurrent = page;
+        this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:(page-1)*this.pageSize,limit:this.pageSize }).then((data) => {
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows[0].settles.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[0].settles[i])
+            }
+        })
+    },
+    changePageSize(size){
+        this.pageSize = size;
+        this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:size }).then((data) => {
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows[0].settles.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[0].settles[i])
+            }
+            this.pageTotal = data.data.data.rows[0].settles_total
+        })
+    },
     handleSubmit (name) {
         this.$refs[name].validate((valid) => {
             if (valid) {
-                this.$Message.success('Success!');
+
+                if(this.permission_arr[0] !== '9999'){
+                    for(let i=0; i<this.permission_arr.length; i++){
+                        if(this.permission_arr[i] === '6008'){
+                            per_val = 6008
+                        }
+                    }
+                    if(per_val === 6008){
+                        
+                        this.confirmCustomerReconciliation({ id:this.$route.query.id }).then((data) => {
+                            if(data.data.code === 1){
+                                this.$Message.success('确认成功!');
+                                this.$router.push({path:'createBill'});
+                            }else{
+                                this.$Notice.warning({
+                                    title: '嘀友提醒',
+                                    desc: data.data.msg
+                                });
+                            }
+                            return data;
+                        })
+
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: '暂无权限访问！'
+                        });
+                    }
+                }else{
+                    this.confirmCustomerReconciliation({ id:this.$route.query.id }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('确认成功!');
+                            this.$router.push({path:'createBill'});
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                        return data;
+                    })
+                }
+                
             } else {
-                this.$Message.error('Fail!');
+                this.$Message.error('确认失败');
             }
         })
     },
   },
   mounted () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+        this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
+            this.$set(this.formValidate,'cusName',data.data.data.rows[0].name);
+            this.$set(this.formValidate,'mailbox',data.data.data.rows[0].email);
+            this.$set(this.formValidate.accountDate,0,data.data.data.rows[0].start_date);
+            this.$set(this.formValidate.accountDate,1,data.data.data.rows[0].end_date);
+            this.$set(this.formValidate,'indentNum',data.data.data.rows[0].count_order);
+            this.$set(this.formValidate,'indentMoney',data.data.data.rows[0].count_amount/100);
+            this.$set(this.formValidate,'payStatus',data.data.data.rows[0].pay_status === 0 ? '未支付':'已支付');
+            this.$set(this.formValidate,'confirmStatus',data.data.data.rows[0].confirm_status === 0 ? '未确认':'已确认');
+            this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
+            this.$set(this.formValidate,'cusAddress',data.data.data.rows[0].address);
+            
+            if(data.data.data.rows[0].confirm_status === 0){
+                this.btn_show = true;
+            }else{
+                this.btn_show = false;
+            }
 
+            this.driver_name = data.data.data.rows[0].name;
+            this.start_date = data.data.data.rows[0].start_date;
+            this.end_date = data.data.data.rows[0].end_date;
+            this.total_indent = data.data.data.rows[0].count_order;
+            this.total_money = data.data.data.rows[0].count_amount/100;
+
+            for(let i=0; i<data.data.data.rows[0].settles.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[0].settles[i])
+            }
+            this.pageTotal = data.data.data.rows[0].settles_total
+        })
   },
   activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+      this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
+            this.$set(this.formValidate,'cusName',data.data.data.rows[0].name);
+            this.$set(this.formValidate,'mailbox',data.data.data.rows[0].email);
+            this.$set(this.formValidate.accountDate,0,data.data.data.rows[0].start_date);
+            this.$set(this.formValidate.accountDate,1,data.data.data.rows[0].end_date);
+            this.$set(this.formValidate,'indentNum',data.data.data.rows[0].count_order);
+            this.$set(this.formValidate,'indentMoney',data.data.data.rows[0].count_amount/100);
+            this.$set(this.formValidate,'payStatus',data.data.data.rows[0].pay_status === 0 ? '未支付':'已支付');
+            this.$set(this.formValidate,'confirmStatus',data.data.data.rows[0].confirm_status === 0 ? '未确认':'已确认');
+            this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
+            this.$set(this.formValidate,'cusAddress',data.data.data.rows[0].address);
 
+            if(data.data.data.rows[0].confirm_status === 0){
+                this.btn_show = true;
+            }else{
+                this.btn_show = false;
+            }
+
+            this.driver_name = data.data.data.rows[0].name;
+            this.start_date = data.data.data.rows[0].start_date;
+            this.end_date = data.data.data.rows[0].end_date;
+            this.total_indent = data.data.data.rows[0].count_order;
+            this.total_money = data.data.data.rows[0].count_amount/100;
+
+            for(let i=0; i<data.data.data.rows[0].settles.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[0].settles[i])
+            }
+            this.pageTotal = data.data.data.rows[0].settles_total
+        })
   }
 }
 </script>
@@ -191,6 +353,21 @@ export default {
                 margin-top: 25px;
             }
         }
+    }
+}
+
+.indentTitle{
+    font-size:14px;
+    padding-right:10px;
+    padding-left:20px;
+}
+.indentData{
+    font-weight: bold;
+}
+
+.indentCard{
+    .ivu-card-extra{
+        top: 8px;
     }
 }
 </style>

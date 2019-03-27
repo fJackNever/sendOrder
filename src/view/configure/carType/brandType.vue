@@ -1,6 +1,6 @@
 <template>
   <div style="padding:0 24px 24px;">
-      <topHost :itemCol="carTypeData" :style="{}"></topHost>
+      <topHost :itemCol="carTypeData"></topHost>
       <Card shadow :title="cardTitle" style="margin-top:10px;">
 
             <span style="font-size:14px;padding-right:10px;">所属类型</span>
@@ -21,9 +21,9 @@
 
             <Button type="primary" @click="find()" style="margin:0 30px;">查询</Button>
 
-            <Button type="primary" @click="addUseType()" style="margin-right:30px;">新增用车类型</Button>
+            <Button type="primary" @click="addUseType()" style="margin-right:30px;">新增车型</Button>
             
-            <Button type="primary" @click="leadType()" style="margin-right:30px;">导入车型</Button>
+            <!-- <Button type="primary" @click="leadType()" style="margin-right:30px;">导入车型</Button> -->
 
             <Button type="primary" @click="exportCarType()" style="margin-right:30px;">导出车型</Button>
 
@@ -71,6 +71,7 @@
 import topHost from '_c/top-host'
 import { Row,Card,Button,Select,Option,Form,FormItem,Table,Input,Modal,Page, } from 'iview'
 import { mapActions } from 'vuex' 
+import FileSaver from 'file-saver';
 export default {
   name: 'brandType',
   components: {
@@ -90,13 +91,7 @@ export default {
   data () {
     return {
       cardTitle:'品牌车型',
-      carTypeData: [
-        { title:'全部车型',colSpan:4,value:60,em:true},
-        { title:'经济型',colSpan:4,value:8,em:true},
-        { title:'舒适型',colSpan:4,value:8,em:true},
-        { title:'商务型',colSpan:4,value:8,em:true},
-        { title:'豪华型',colSpan:4,value:8,em:false},
-      ],
+      carTypeData: [],
       useTypeArr:[],
       add_edit:1,
       useType:0,
@@ -107,10 +102,6 @@ export default {
       },
       ruleValidate: {},
       order_columns: [
-            {
-                title: '车型编号',
-                key: 'id'
-            },
             {
                 title: '品牌',
                 key: 'brand'
@@ -147,6 +138,7 @@ export default {
         pageCurrent:1,
         use_id:'',
         status_val:'',
+        top_data_num:'',
     }
   },
   methods: {
@@ -156,7 +148,9 @@ export default {
       'delCarTemplate',
       'getCarTemplateLists',
       'getUseCarTypeLists',
+      'getTemplateHost',
     ]),
+
     checkUseType(val){
         this.order_data = [];
         this.searchVal = '';
@@ -234,11 +228,33 @@ export default {
         this.$refs['formValidate'].resetFields();
         this.add_edit = 1;
     },
-    leadType(){
-
-    },
     exportCarType(){
-        
+
+        this.getCarTemplateLists({ id:'',status:'',use_car_type_id:'',search:'',offset:0,limit:10000 }).then((data) => {
+            let result = data.data.data.rows;
+            let str = '品牌,型号,所属类型,状态';
+            
+            for (let i=0; i<result.length; i++) {
+                let car_status = ''
+                if(result[i].status === 0){
+                    car_status = '停用'
+                }else{
+                    car_status = '启用'
+                }
+                
+                    str += '\n' +
+                    result[i].brand + ',' +
+                    result[i].model + ',' +
+                    result[i].user_car_type_name + ',' +
+                    car_status
+            }
+            let exportContent = "\uFEFF";
+            let blob = new Blob([exportContent + str], {
+                type: "text/plain;charset=utf-8"
+            });
+            FileSaver.saveAs(blob, "车型列表.xls");
+
+        })
         
     },
     edit(index,use_car_type_id,brand,model,status){
@@ -381,6 +397,18 @@ export default {
     },
   },
   mounted () {
+        
+    this.getTemplateHost().then((data) => {
+        this.top_data_num = data.data.data.length
+        for(let i=0; i<data.data.data.length; i++){
+            if(i === data.data.data.length-1){
+                this.$set(this.carTypeData,i,{ title:data.data.data[i].name,colSpan:3,value:data.data.data[i].count,em:false})
+            }else{
+                this.$set(this.carTypeData,i,{ title:data.data.data[i].name,colSpan:3,value:data.data.data[i].count,em:true})
+            }
+        }
+    }) 
+
     this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
         data.data.data.rows.map((item,index)=>{
             this.$set(this.useTypeArr,index,item);
@@ -396,13 +424,26 @@ export default {
 
   },
   activated () {
-    this.getUseCarTypeLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10 }).then((data) => {
+
+    this.getTemplateHost().then((data) => {
+        this.top_data_num = data.data.data.length
+        for(let i=0; i<data.data.data.length; i++){
+            if(i === data.data.data.length-1){
+                this.$set(this.carTypeData,i,{ title:data.data.data[i].name,colSpan:3,value:data.data.data[i].count,em:false})
+            }else{
+                this.$set(this.carTypeData,i,{ title:data.data.data[i].name,colSpan:3,value:data.data.data[i].count,em:true})
+            }
+            
+        }
+    }) 
+
+    this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10 }).then((data) => {
         data.data.data.rows.map((item,index)=>{
             this.$set(this.useTypeArr,index,item);
         })
     })
 
-    this.getCarTemplateLists({ id:'',status:'',search:'',offset:0,limit:10000 }).then((data) => {
+    this.getCarTemplateLists({ id:'',status:'',use_car_type_id:'',search:'',offset:0,limit:10 }).then((data) => {
         for(let i=0; i<data.data.data.rows.length; i++){
             this.$set(this.order_data,i,data.data.data.rows[i])
         }

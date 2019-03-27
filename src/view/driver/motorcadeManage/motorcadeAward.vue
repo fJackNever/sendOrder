@@ -154,7 +154,7 @@ export default {
 
     },
     new_edit_driver(index){
-        this.$router.push({path:'newEditDriver',query:{id:index}});
+        this.$router.push({path:'editDriver',query:{id:index}});
     },
     awardTeam(index){
         this.awardVisible = true

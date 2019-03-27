@@ -14,6 +14,15 @@
             <span style="font-size:14px;padding-right:10px;">发单时间段段配置</span>
             <TimePicker @on-change="changeTime" :value="date_val" format="HH:mm:ss" type="timerange" placement="bottom-end" placeholder="请选择注册时间范围" style="width: 200px" transfer></TimePicker>
             <span style="font-size:14px;padding-left:10px;">之间允许调度发单</span>
+
+            <Divider />
+
+            <span style="font-size:14px;padding-right:10px;">	订单价格显示类型</span>
+            <Select v-model="priceStatus" style="width:100px;margin-right:10px;" transfer>
+                <Option :value="1" >订单原价</Option>
+                <Option :value="2" >扣除平台费</Option>
+                <Option :value="3" >不显示</Option>
+            </Select>
       </Card>
 
       <Card shadow title="调度员提醒配置" style="margin-top:10px;">
@@ -121,6 +130,7 @@ export default {
       aheadRemindTime:0,
       permission:1,
       aheadTime:0,
+      priceStatus:1
     }
   },
   methods: {
@@ -157,6 +167,7 @@ export default {
             distance_order_start_time:this.aheadRemindTime,
             is_allow_driver_change_order:this.permission,
             can_change_order_time:this.aheadTime,
+            order_amount_show:this.priceStatus,
             }).then((data) => {
             if(data.data.code === 1){
                 this.$Message.success('保存成功!');
@@ -171,10 +182,6 @@ export default {
 
   },
   mounted () {
-    let myDate = new Date();
-        myDate.getFullYear();    //获取完整的年份(4位,1970-????)
-        myDate.getMonth();       //获取当前月份(0-11,0代表1月)
-        myDate.getDate(); 
     this.getCompanyOrderBaseConfig().then((data) => {
         this.pre_create_order_limit_time = data.data.data.pre_create_order_limit_time
         this.pre_create_order_time = data.data.data.pre_create_order_time
@@ -192,6 +199,7 @@ export default {
         this.aheadRemindTime = data.data.data.distance_order_start_time
         this.permission = data.data.data.is_allow_driver_change_order
         this.aheadTime = data.data.data.can_change_order_time
+        this.priceStatus = data.data.data.order_amount_show
     })
   },
   activated () {
@@ -212,6 +220,7 @@ export default {
         this.aheadRemindTime = data.data.data.distance_order_start_time
         this.permission = data.data.data.is_allow_driver_change_order
         this.aheadTime = data.data.data.can_change_order_time
+        this.priceStatus = data.data.data.order_amount_show
     })
   }
 }

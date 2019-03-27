@@ -124,7 +124,7 @@
                         </Upload>
                     </FormItem>
                     <FormItem label="是否通过审核" prop="checkPass" :label-width="120" >
-                        <RadioGroup v-model="formValidate.checkPass" >
+                        <RadioGroup v-model="formValidate.checkPass" @on-change="changePassStatus">
                             <Radio :label="0" :disabled="disabledStatus">未审核</Radio>
                             <Radio :label="1" :disabled="disabledStatus">待审核</Radio>
                             <Radio :label="2" :disabled="disabledStatus">通过审核</Radio>
@@ -134,14 +134,20 @@
                     <FormItem label="审核拒绝" prop="rejectDesc" :label-width="120" v-if="rejectVisible">
                         <Input v-model="formValidate.rejectDesc" type="textarea" :rows="8" :autosize="{minRows: 5,maxRows: 8}" placeholder="请输入审核拒绝理由..." style="width:400px"></Input>
                     </FormItem>
+                    <FormItem>
+                        <Button type="primary" @click="handlePass()">修改审核状态</Button>
+                    </FormItem>
                     <FormItem label="运营状态" prop="operateStatus" :label-width="120" >
-                        <RadioGroup v-model="formValidate.operateStatus" >
+                        <RadioGroup v-model="formValidate.operateStatus" @on-change="changeOperateStatus">
                             <Radio :label="0" :disabled="disabledStatus">停运</Radio>
                             <Radio :label="1" :disabled="disabledStatus">正常</Radio>
                         </RadioGroup>
                     </FormItem>
                     <FormItem label="停运" prop="stopDesc" :label-width="120" v-if="stopVisible">
                         <Input v-model="formValidate.stopDesc" type="textarea" :rows="8" :autosize="{minRows: 5,maxRows: 8}" placeholder="请输入停运理由..." style="width:400px"></Input>
+                    </FormItem>
+                    <FormItem>
+                        <Button type="primary" @click="handleOperate()">修改运营状态</Button>
                     </FormItem>
                 </Form>
                 <Form ref="formBindValidate" :model="formBindValidate" :rules="ruleBindValidate" :label-width="120" >
@@ -160,19 +166,19 @@
                     </Row>
 
                     <FormItem label="车牌号" prop="authCarNo" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formValidate.authCarNo" placeholder="请输入车牌号" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarNo" placeholder="请输入车牌号" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="车架号" prop="authVin" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formValidate.authVin" placeholder="请输入车架号" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authVin" placeholder="请输入车架号" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="注册日期" prop="authCarRegisteredDate" :label-width="120" v-if="car_info_show">
-                        <DatePicker type="date" placeholder="注册日期" v-model="formValidate.authCarRegisteredDate" style="width:200px"></DatePicker>
+                        <DatePicker type="date" placeholder="注册日期" v-model="formBindValidate.authCarRegisteredDate" style="width:200px"></DatePicker>
                     </FormItem>
 
                     <FormItem label="车身颜色" prop="authCarColor" :label-width="120" v-if="car_info_show"> 
-                        <Input v-model="formValidate.authCarColor" placeholder="车身颜色" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarColor" placeholder="车身颜色" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="行驶证正本面" prop="travelFrontPic" v-if="car_info_show">
@@ -199,20 +205,20 @@
                     </FormItem>
                 </Form>
                 <Modal title="绑定车辆" v-model="bindVisible" :footer-hide="true">
-                    <Form ref="formSelectValidate" :model="formSelectValidate" :rules="ruleSelectValidate" :label-width="120" >
-                        <FormItem label="选择绑定车辆" prop="bindCar" :label-width="120">
+                        <div style="text-align: center;">
+                            <span style="font-size:14px;padding-right:10px;">绑定车辆</span>
                             <AutoComplete
-                                v-model="formSelectValidate.bindCar"
-                                :data="bindCarGather"
+                                v-model="bindCar"
                                 @on-search="searchBindCar"
-                                placeholder="请输入绑定车辆"
+                                @on-select="selectBindCar"
+                                placeholder="请输入绑定车牌号"
                                 style="width:200px" transfer>
+                                <Option v-for="item in bindCarGather" :value="item.id" :key="item.id" >{{ item.car_no }}</Option>
                             </AutoComplete>
-                        </FormItem>
-                        <FormItem>
+                        </div>
+                        <div style="text-align: center;margin:20px 0;">
                             <Button type="error" @click="handleSure()">确认</Button>
-                        </FormItem>
-                    </Form>
+                        </div>
                 </Modal>
             </Col>
             <Col span="12">
@@ -334,19 +340,19 @@
                         </RadioGroup>
                     </FormItem>
                     <FormItem label="所有人" prop="authOwner" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formValidate.authOwner" placeholder="请输入所有人" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authOwner" placeholder="请输入所有人" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="发动机号" prop="authEngineNo" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formValidate.authEngineNo" placeholder="请输入发动机号" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authEngineNo" placeholder="请输入发动机号" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="用车类型" prop="authCarType" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formValidate.authCarType" placeholder="请输入用车类型" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarType" placeholder="请输入用车类型" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="品牌车型" prop="authCarTemplate" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formValidate.authCarTemplate" placeholder="请输入品牌车型" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarTemplate" placeholder="请输入品牌车型" style="width:200px"></Input>
                     </FormItem>
 
                     <FormItem label="人车合照" prop="carPerPic" :label-width="120" v-if="car_info_show">
@@ -410,13 +416,9 @@ export default {
       formValidate: {
           getDriveDate:moment().format('YYYY-MM-DD'),
           endDriveDate:moment().format('YYYY-MM-DD'),
-          authCarRegisteredDate:moment().format('YYYY-MM-DD'),
       },
       formBindValidate:{
 
-      },
-      formSelectValidate:{
-          bindCar:'',
       },
       cardTitle:'查看加盟司机',
       ruleValidate: {
@@ -434,6 +436,7 @@ export default {
       allPicModal: '',
       visible: false,
       bindVisible:false,
+      bindCar:'',
       bindCarGather:[],
       idFrontList: [],
       driveFontList: [],
@@ -448,6 +451,11 @@ export default {
       stopVisible:false,
       stopDesc:'',
       car_info_show:true,
+      inputCarShake:'',
+      carId:'',
+      auth_status:'',
+      is_server:'',
+      permission_arr:'',
     }
   },
   methods: {
@@ -457,13 +465,159 @@ export default {
       'addDriver',
       'editDriver',
       'getDriverLists',
+      'getCarLists',
+      'bindingCar',
+      'unbindingCar',
+      'authDriverStatus',
+      'editDriverStatus',
     ]),
-    searchBindCar(value){
-      this.bindCarGather = !value ? [] : [
-          value,
-          value + value,
-          value + value + value
-      ];
+    changePassStatus(val){
+        this.auth_status = val;
+        if(val === 3){
+            this.rejectVisible = true;
+        }else{
+            this.rejectVisible = false;
+        }
+    },
+    changeOperateStatus(val){
+        console.log(val)
+        this.is_server = val;
+        if(val === 3){
+            this.stopVisible = true;
+        }else{
+            this.stopVisible = false;
+        }
+    },
+    handlePass(){
+        let per_val = '' 
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2003'){
+                    per_val = 2003
+                }
+            }
+            if(per_val === 2003){
+                
+                if(this.rejectVisible){
+                    this.authDriverStatus({ id:this.$route.query.id,auth_status:this.auth_status,auth_comment:this.formValidate.rejectDesc }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }else{
+                    this.authDriverStatus({ id:this.$route.query.id,auth_status:this.auth_status,auth_comment:'' }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }
+
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            if(this.rejectVisible){
+                this.authDriverStatus({ id:this.$route.query.id,auth_status:this.auth_status,auth_comment:this.formValidate.rejectDesc }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('修改成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+            }else{
+                this.authDriverStatus({ id:this.$route.query.id,auth_status:this.auth_status,auth_comment:'' }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('修改成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+            }
+        }
+        
+    },
+    handleOperate(){
+        let per_val = '' 
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2006'){
+                    per_val = 2006
+                }
+            }
+            if(per_val === 2006){
+                if(this.stopVisible){
+                    this.editDriverStatus({ id:this.$route.query.id,status:this.is_server,server_comment:this.formValidate.stopDesc }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }else{
+                    this.editDriverStatus({ id:this.$route.query.id,status:this.is_server,server_comment:'' }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            if(this.stopVisible){
+                this.editDriverStatus({ id:this.$route.query.id,status:this.is_server,server_comment:this.formValidate.stopDesc }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('修改成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+            }else{
+                this.editDriverStatus({ id:this.$route.query.id,status:this.is_server,server_comment:'' }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('修改成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+            }
+        }
     },
     handleView (url) {
         this.allPicModal = url;
@@ -558,7 +712,26 @@ export default {
         return check;
     },
     handleBeforeTravelFront(){
+        let check = this.travelFrontList.length < 2;
+        if (!check) {
+            this.$Notice.warning({
+                title: '只能上传一张图片'
+            });
+        }else{
+            let reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onloadend = () => {
+                let base64Img = reader.result.split('base64,')[1];
+                this.uploadPic({ base64Img }).then(res => {
+                    this.$set(this.travelFrontList,0, {
+                        url:res.data.data.path,
+                        name:'travelFrontPic' + res.data.data.ossId,
+                    })
+                })
+            };
+        }
 
+        return check;
     },
     handleBeforeIdBack (file) {
         let check = this.idBackList.length < 2;
@@ -649,27 +822,142 @@ export default {
 
         return check;
     },
-
+    searchBindCar(value){
+      if(this.inputCarShake) clearTimeout(this.inputCarShake)
+        this.inputCarShake = setTimeout(()=>{
+            this.getCarLists({ id:'',status:'',car_template_id:'',start_time:'',end_time:'',car_no:value,search:'',offset:0,limit:10 }).then((data) => {
+                this.bindCarGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.bindCarGather,i,data.data.data.rows[i])
+                }
+            })
+        },600)
+    },
+    selectBindCar(val){
+        this.getCarLists({ id:val,status:'',car_template_id:'',start_time:'',end_time:'',car_no:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.bindCar = data.data.data.rows[0].car_no
+            this.carId = val
+        })
+    },
     handleBind(){
-        this.bindVisible = true;
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2004'){
+                    per_val = 2004
+                }
+            }
+            if(per_val === 2004){
+                this.bindVisible = true;
+                this.bindCar = '';
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.bindVisible = true;
+            this.bindCar = '';
+        }
+        
     },
     handleUnbind(){
 
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2005'){
+                    per_val = 2005
+                }
+            }
+            if(per_val === 2005){
+                this.unbindingCar({ 
+                    car_id:this.carId,
+                    driver_id:this.$route.query.id,
+                }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('解绑成功!');
+                        this.bindVisible = false;
+                        this.car_info_show = false;
+                        this.$refs['formBindValidate'].resetFields();
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.unbindingCar({ 
+                car_id:this.carId,
+                driver_id:this.$route.query.id,
+            }).then((data) => {
+                if(data.data.code === 1){
+                    this.$Message.success('解绑成功!');
+                    this.bindVisible = false;
+                    this.car_info_show = false;
+                    this.$refs['formBindValidate'].resetFields();
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+            })
+        }
+
+        
     },
     handleSure(){
-        
+        this.bindingCar({ 
+            car_id:this.carId,
+            driver_id:this.$route.query.id,
+        }).then((data) => {
+            if(data.data.code === 1){
+                this.$Message.success('绑定成功!');
+                this.bindVisible = false;
+                this.getDriverLists({ id:this.$route.query.id,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10000 }).then((data) => {
+
+                    this.car_info_show = true
+                    this.$set(this.formBindValidate,'authCarNo',data.data.data.rows[0].binding_info.car_no);
+                    this.$set(this.formBindValidate,'authVin',data.data.data.rows[0].binding_info.frame_no);
+                    this.$set(this.formBindValidate,'authCarRegisteredDate',data.data.data.rows[0].binding_info.register_date);
+                    this.$set(this.formBindValidate,'authCarColor',data.data.data.rows[0].binding_info.car_color);
+                    if(data.data.data.rows[0].binding_info.travel_img_path){
+                        this.$set(this.travelFrontList,0,{ url:data.data.data.rows[0].binding_info.travel_img_path, name:'travelFrontPic1' });
+                    }
+                    this.$set(this.formBindValidate,'authOwner',data.data.data.rows[0].binding_info.owner);
+                    this.$set(this.formBindValidate,'authEngineNo',data.data.data.rows[0].binding_info.engine_no);
+                    this.$set(this.formBindValidate,'authCarType',data.data.data.rows[0].binding_info.use_car_type_name);
+                    this.$set(this.formBindValidate,'authCarTemplate',data.data.data.rows[0].binding_info.brand_model);
+
+                    if(data.data.data.rows[0].binding_info.car_person_img_path){
+                        this.$set(this.carPerList,0,{ url:data.data.data.rows[0].binding_info.car_person_img_path, name:'carPerPic1' });
+                    }
+                    
+                })
+
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
+            }
+        })
     }
   },
   mounted () {
 
-        if(this.$route.query.binding_id){
-            this.car_info_show = true;
-        }else{
-            this.car_info_show = false;
-        }
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
 
-        this.getDriverLists({ id:this.$route.query.id,status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+        this.getDriverLists({ id:this.$route.query.id,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
 
+            this.carId = data.data.data.rows[0].binding_id;
             this.$set(this.formValidate,'idName',data.data.data.rows[0].id_name);
             this.$set(this.formValidate,'telephone',data.data.data.rows[0].telephone);
             if(data.data.data.rows[0].id_img_path){
@@ -686,13 +974,37 @@ export default {
             }
             this.$set(this.formValidate,'checkPass',data.data.data.rows[0].auth_status);
             this.$set(this.formValidate,'operateStatus',data.data.data.rows[0].status);
-            if(this.$route.query.binding_id){
-                this.$set(this.formValidate,'authCarNo',data.data.data.rows[0].binding_info.car_no);
-                this.$set(this.formValidate,'authVin',data.data.data.rows[0].binding_info.frame_no);
-                this.$set(this.formValidate,'authCarRegisteredDate',data.data.data.rows[0].binding_info.register_date);
-                this.$set(this.formValidate,'authCarColor',data.data.data.rows[0].binding_info.car_color);
-                if(data.data.data.rows[0].travel_img_path){
-                    this.$set(this.travelFrontList,0,{ url:data.data.data.rows[0].travel_img_path,name:'travelFrontPic1', });
+
+            if(data.data.data.rows[0].auth_status === 3 ){
+                this.rejectVisible = true;
+                this.$set(this.formValidate,'rejectDesc',data.data.data.rows[0].auth_status);
+            }
+
+            if(data.data.data.rows[0].status === 0 ){
+                this.stopVisible = true;
+                this.$set(this.formValidate,'stopDesc',data.data.data.rows[0].auth_status);
+            }
+
+            this.auth_status = data.data.data.rows[0].auth_status;
+            this.is_server = data.data.data.rows[0].status;
+            
+            if(data.data.data.rows[0].binding_info.car_no === ''){
+                    this.car_info_show = false
+            }else{
+                this.car_info_show = true;
+                this.$set(this.formBindValidate,'authCarNo',data.data.data.rows[0].binding_info.car_no);
+                this.$set(this.formBindValidate,'authVin',data.data.data.rows[0].binding_info.frame_no);
+                this.$set(this.formBindValidate,'authCarRegisteredDate',data.data.data.rows[0].binding_info.register_date);
+                this.$set(this.formBindValidate,'authCarColor',data.data.data.rows[0].binding_info.car_color);
+                if(data.data.data.rows[0].binding_info.travel_img_path){
+                    this.$set(this.travelFrontList,0,{ url:data.data.data.rows[0].binding_info.travel_img_path,name:'travelFrontPic1', });
+                }
+                this.$set(this.formBindValidate,'authOwner',data.data.data.rows[0].binding_info.owner);
+                this.$set(this.formBindValidate,'authEngineNo',data.data.data.rows[0].binding_info.engine_no);
+                this.$set(this.formBindValidate,'authCarType',data.data.data.rows[0].binding_info.use_car_type_name);
+                this.$set(this.formBindValidate,'authCarTemplate',data.data.data.rows[0].binding_info.brand_model);
+                if(data.data.data.rows[0].binding_info.car_person_img_path){
+                    this.$set(this.carPerList,0,{ url:data.data.data.rows[0].binding_info.car_person_img_path,name:'carPerPic1', });
                 }
             }
             
@@ -708,15 +1020,6 @@ export default {
             }
             if(data.data.data.rows[0].net_car_img_path){
                 this.$set(this.webDriveCarList,0,{ url:data.data.data.rows[0].net_car_img_path,name:'webDriveCarPic1', });
-            }
-            if(this.$route.query.binding_id){
-                this.$set(this.formValidate,'authOwner',data.data.data.rows[0].binding_info.owner);
-                this.$set(this.formValidate,'authEngineNo',data.data.data.rows[0].binding_info.engine_no);
-                this.$set(this.formValidate,'authCarType',data.data.data.rows[0].use_car_type_name);
-                this.$set(this.formValidate,'authCarTemplate',data.data.data.rows[0].brand_model);
-                if(data.data.data.rows[0].binding_info.car_person_img_path){
-                    this.$set(this.carPerList,0,{ url:data.data.data.rows[0].binding_info.car_person_img_path,name:'carPerPic1', });
-                }
             }
         })
 
@@ -726,14 +1029,11 @@ export default {
   },
   activated () {
 
-        if(this.$route.query.binding_id){
-            this.car_info_show = true;
-        }else{
-            this.car_info_show = false;
-        }
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
 
-        this.getDriverLists({ id:this.$route.query.id,status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+        this.getDriverLists({ id:this.$route.query.id,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
 
+            this.carId = data.data.data.rows[0].binding_id;
             this.$set(this.formValidate,'idName',data.data.data.rows[0].id_name);
             this.$set(this.formValidate,'telephone',data.data.data.rows[0].telephone);
             if(data.data.data.rows[0].id_img_path){
@@ -750,13 +1050,36 @@ export default {
             }
             this.$set(this.formValidate,'checkPass',data.data.data.rows[0].auth_status);
             this.$set(this.formValidate,'operateStatus',data.data.data.rows[0].status);
-            if(this.$route.query.binding_id){
-                this.$set(this.formValidate,'authCarNo',data.data.data.rows[0].binding_info.car_no);
-                this.$set(this.formValidate,'authVin',data.data.data.rows[0].binding_info.frame_no);
-                this.$set(this.formValidate,'authCarRegisteredDate',data.data.data.rows[0].binding_info.register_date);
-                this.$set(this.formValidate,'authCarColor',data.data.data.rows[0].binding_info.car_color);
-                if(data.data.data.rows[0].travel_img_path){
-                    this.$set(this.travelFrontList,0,{ url:data.data.data.rows[0].travel_img_path,name:'travelFrontPic1', });
+
+            if(data.data.data.rows[0].auth_status === 3 ){
+                this.rejectVisible = true;
+                this.$set(this.formValidate,'rejectDesc',data.data.data.rows[0].auth_status);
+            }
+
+            if(data.data.data.rows[0].status === 0 ){
+                this.stopVisible = true;
+                this.$set(this.formValidate,'stopDesc',data.data.data.rows[0].auth_status);
+            }
+
+            this.auth_status = data.data.data.rows[0].auth_status;
+            this.is_server = data.data.data.rows[0].status;
+
+            if(data.data.data.rows[0].binding_info.car_no === ''){
+                    this.car_info_show = false
+            }else{
+                this.$set(this.formBindValidate,'authCarNo',data.data.data.rows[0].binding_info.car_no);
+                this.$set(this.formBindValidate,'authVin',data.data.data.rows[0].binding_info.frame_no);
+                this.$set(this.formBindValidate,'authCarRegisteredDate',data.data.data.rows[0].binding_info.register_date);
+                this.$set(this.formBindValidate,'authCarColor',data.data.data.rows[0].binding_info.car_color);
+                if(data.data.data.rows[0].binding_info.travel_img_path){
+                    this.$set(this.travelFrontList,0,{ url:data.data.data.rows[0].binding_info.travel_img_path,name:'travelFrontPic1', });
+                }
+                this.$set(this.formBindValidate,'authOwner',data.data.data.rows[0].binding_info.owner);
+                this.$set(this.formBindValidate,'authEngineNo',data.data.data.rows[0].binding_info.engine_no);
+                this.$set(this.formBindValidate,'authCarType',data.data.data.rows[0].binding_info.use_car_type_name);
+                this.$set(this.formBindValidate,'authCarTemplate',data.data.data.rows[0].binding_info.brand_model);
+                if(data.data.data.rows[0].binding_info.car_person_img_path){
+                    this.$set(this.carPerList,0,{ url:data.data.data.rows[0].binding_info.car_person_img_path,name:'carPerPic1', });
                 }
             }
             
@@ -772,15 +1095,6 @@ export default {
             }
             if(data.data.data.rows[0].net_car_img_path){
                 this.$set(this.webDriveCarList,0,{ url:data.data.data.rows[0].net_car_img_path,name:'webDriveCarPic1', });
-            }
-            if(this.$route.query.binding_id){
-                this.$set(this.formValidate,'authOwner',data.data.data.rows[0].binding_info.owner);
-                this.$set(this.formValidate,'authEngineNo',data.data.data.rows[0].binding_info.engine_no);
-                this.$set(this.formValidate,'authCarType',data.data.data.rows[0].use_car_type_name);
-                this.$set(this.formValidate,'authCarTemplate',data.data.data.rows[0].brand_model);
-                if(data.data.data.rows[0].binding_info.car_person_img_path){
-                    this.$set(this.carPerList,0,{ url:data.data.data.rows[0].binding_info.car_person_img_path,name:'carPerPic1', });
-                }
             }
         })
 

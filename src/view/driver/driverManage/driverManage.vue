@@ -1,6 +1,6 @@
 <template>
   <div style="padding:0 24px 24px;">
-    <topHost :itemCol="leagueDriverData" :style="{}"></topHost>
+    <topHost :itemCol="leagueDriverData" @transferdata="updateTable"></topHost>
       <Card shadow style="margin-top:10px;">
         <span style="font-size:14px;padding-right:10px;">城市</span>
         <Select v-model="citySelected" style="width:80px;margin-right:10px;" transfer @on-change="changeCity">
@@ -29,11 +29,12 @@
         </Select>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">车队</span>
-        <Select v-model="carTeamSelected" style="width:150px;margin-right:10px;" transfer>
-            <Option v-for="(item,index) in carTeamOptions" :value="item.value" :key="index">{{ item.label }}</Option>
+        <Select v-model="carTeamSelected" style="width:150px;margin-right:10px;" transfer @on-change="changeTeam">
+            <Option :value="-1">全部</Option>
+            <Option v-for="(item,index) in carTeamOptions" :value="item.id" :key="index">{{ item.fleet_name }}</Option>
         </Select>
 
-        <DatePicker type="daterange" :value="date_val" :start-date="new Date()" placement="bottom-end" placeholder="请选择注册时间范围" style="width: 200px;margin-left:20px;"></DatePicker>
+        <DatePicker type="daterange" @on-change="changeDate" :value="date_val" :start-date="new Date()" placement="bottom-end" placeholder="请选择注册时间范围" style="width: 200px;margin-left:20px;"></DatePicker>
 
         <Divider />
 
@@ -44,7 +45,7 @@
         @on-select="selectName"
         placeholder="请输入司机姓名"
         style="width:200px" transfer>
-            <Option v-for="item in driverGather" :value="item.id" :key="item.id" >{{ item.id_name }}</Option>
+            <Option v-for="(item,index) in driverGather" :value="item.id" :key="index" >{{ item.id_name }}</Option>
         </AutoComplete>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">司机手机号</span>
@@ -55,7 +56,7 @@
         <Divider />
         
         <Button type="primary" style="margin-right:30px;" @click="new_edit_driver(1)">新增加盟司机</Button>
-        <Button type="primary" style="margin-right:30px;">导入加盟司机</Button>
+        <!-- <Button type="primary" style="margin-right:30px;">导入加盟司机</Button> -->
 
       </Card>
       <Card shadow style="margin-top:30px;margin-bottom:130px;">
@@ -64,18 +65,38 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="check_driver(row.id,row.binding_id)">查看</Button>
+                <Button type="primary" style="margin-right: 5px" @click="check_driver(row.id)" >查看</Button>
                 <Button type="primary" style="margin-right: 5px" @click="new_edit_driver(2,row.id)">编辑</Button>
+                <Button type="primary" style="margin-right: 5px" @click="un_bind_driver(1,row.id)" v-if="row.is_binding === 0">绑车</Button>
+                <Button type="primary" style="margin-right: 5px" @click="un_bind_driver(2,row.id,row.binding_id)" v-if="row.is_binding === 1">解绑</Button>
+                <Button type="success" style="margin-right: 5px" @click="stop_recover(1,row.id)" v-if="row.status === 0">恢复运营</Button>
+                <Button type="success" style="margin-right: 5px" @click="stop_recover(0,row.id)" v-if="row.status === 1">停运</Button>
                 <Button type="error" @click="remove(row.id)">删除</Button>
             </template>
         </Table>
         <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
       </Card>
+      <Modal title="绑定车辆" v-model="bindVisible" :footer-hide="true">
+            <div style="text-align: center;">
+                <span style="font-size:14px;padding-right:10px;">绑定车辆</span>
+                <AutoComplete
+                    v-model="bindCar"
+                    @on-search="searchBindCar"
+                    @on-select="selectBindCar"
+                    placeholder="请输入绑定车牌号"
+                    style="width:200px" transfer>
+                    <Option v-for="item in bindCarGather" :value="item.id" :key="item.id" >{{ item.car_no }}</Option>
+                </AutoComplete>
+            </div>
+            <div style="text-align: center;margin:20px 0;">
+                <Button type="error" @click="handleSure()">确认</Button>
+            </div>
+      </Modal>
   </div>
 </template>
 
 <script>
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page,Modal } from 'iview'
 import { mapActions } from 'vuex'
 import topHost from '_c/top-host'
 import moment from 'moment' 
@@ -93,15 +114,11 @@ export default {
     AutoComplete,
     Page,
     topHost,
+    Modal,
   },
   data () {
     return {
-      leagueDriverData: [
-        { title:'加盟司机',colSpan:4,value:60,em:true},
-        { title:'已审核司机',colSpan:4,value:8,em:true},
-        { title:'待审核司机',colSpan:4,value:8,em:true},
-        { title:'停运司机',colSpan:4,value:8,em:false},
-      ],
+      leagueDriverData: [],
       citySelected:-1,
       city_arr:[],
       teamStatusSelected:4,
@@ -130,11 +147,8 @@ export default {
         {label:'否',value:0},
         {label:'是',value:1},
       ],
-      carTeamSelected:1,
-      carTeamOptions:[
-        {label:'x车队',value:1},
-        {label:'滴滴车队',value:2},
-      ],
+      carTeamSelected:-1,
+      carTeamOptions:[],
       date_val:['',''],
       driverName:'',
       inputNameShake:'',
@@ -155,7 +169,12 @@ export default {
             },
             {
                 title: '车牌号',
-                key: 'binding_info.car_no'
+                key: 'binding_info',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.binding_info.car_no),
+                    ]);
+                }
             },
             {
                 title: '审核状态',
@@ -196,7 +215,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 220,
+                width: 380,
                 align: 'center'
             }
         ],
@@ -204,6 +223,13 @@ export default {
         pageTotal:0,
         pageSize:10,
         pageCurrent:1,
+        bindVisible:false,
+        bindCar:'',
+        bindCarGather:[],
+        inputCarShake:'',
+        carId:'',
+        driverId:'',
+        permission_arr:'',
     }
   },
   methods: {
@@ -211,8 +237,48 @@ export default {
       'getCompanyCityLists',
       'getDriverLists',
       'bindingCar',
+      'unbindingCar',
+      'editDriverStatus',
       'delDriver',
+      'getCarLists',
+      'getFleetLists',
+      'getDriverHost',
     ]),
+    updateTable(index){
+        if(index === 0){
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                    this.order_data = []
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+            })
+        }else if(index === 1){
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:2,is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                    this.order_data = []
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+            })
+        }else if(index === 2){
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:1,is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                    this.order_data = []
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+            })
+        }else if(index === 3){
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:3,is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                    this.order_data = []
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+            })
+        }
+    },
     getAuthCarStatus(status){
         if(status === 0){
             return '未审核'
@@ -225,6 +291,7 @@ export default {
         }
     },
     changeCity(val){
+        this.carTeamSelected = -1;
         this.order_data = [];
         this.teamStatusSelected = 4;
         this.operationSelected = 2;
@@ -233,14 +300,16 @@ export default {
         this.driverName = '';
         this.driverPhone = '';
         if(val === -1){
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
                 this.pageTotal = data.data.data.total
             })
         }else{
-            this.getDriverLists({ id:'',status:'',city_id:val,start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:val,start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
@@ -249,21 +318,25 @@ export default {
         }
     },
     changeTeamStatus(val){
+        this.carTeamSelected = -1;
         this.order_data = [];
+        this.citySelected = -1;
         this.operationSelected = 2;
         this.bindingSelected = 2;
         this.serviceSelected = 2;
         this.driverName = '';
         this.driverPhone = '';
         if(val === 4){
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
                 this.pageTotal = data.data.data.total
             })
         }else{
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:val,is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:val,is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
@@ -272,21 +345,25 @@ export default {
         }
     },
     changeOperateStatus(val){
+        this.carTeamSelected = -1;
         this.order_data = [];
+        this.citySelected = -1;
         this.teamStatusSelected = 4;
         this.bindingSelected = 2;
         this.serviceSelected = 2;
         this.driverName = '';
         this.driverPhone = '';
         if(val === 2){
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
                 this.pageTotal = data.data.data.total
             })
         }else{
-            this.getDriverLists({ id:'',status:val,city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:val,city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
@@ -295,21 +372,25 @@ export default {
         }
     },
     changeBinding(val){
+        this.carTeamSelected = -1;
         this.order_data = [];
+        this.citySelected = -1;
         this.teamStatusSelected = 4;
         this.operationSelected = 2;
         this.serviceSelected = 2;
         this.driverName = '';
         this.driverPhone = '';
         if(val === 2){
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
                 this.pageTotal = data.data.data.total
             })
         }else{
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:val,is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:val,is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
@@ -318,21 +399,26 @@ export default {
         }
     },
     changeService(val){
+        
+        this.carTeamSelected = -1;
         this.order_data = [];
+        this.citySelected = -1;
         this.teamStatusSelected = 4;
         this.operationSelected = 2;
         this.bindingSelected = 2;
         this.driverName = '';
         this.driverPhone = '';
         if(val === 2){
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
                 this.pageTotal = data.data.data.total
             })
         }else{
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:val,search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:val,search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.order_data,i,data.data.data.rows[i])
                 }
@@ -340,10 +426,55 @@ export default {
             })
         }
     },
+    changeTeam(val){
+        this.serviceSelected = 2
+        this.order_data = [];
+        this.citySelected = -1;
+        this.teamStatusSelected = 4;
+        this.operationSelected = 2;
+        this.bindingSelected = 2;
+        this.driverName = '';
+        this.driverPhone = '';
+        if(val === -1){
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total
+            })
+        }else{
+            this.getDriverLists({ id:'',fleet_id:val,status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                this.order_data = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total
+            })
+        }
+    },
+    changeDate(date){
+        this.carTeamSelected = -1;
+        this.order_data = [];
+        this.citySelected = -1;
+        this.teamStatusSelected = 4;
+        this.operationSelected = 2;
+        this.bindingSelected = 2;
+        this.serviceSelected = 2;
+        this.driverName = '';
+        this.driverPhone = '';
+        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:date[0],end_time:date[1],id_name:this.driverName,telephone:this.driverPhone,auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+            this.order_data = []
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        })
+    },
     searchName(value){
       if(this.inputNameShake) clearTimeout(this.inputNameShake)
         this.inputNameShake = setTimeout(()=>{
-            this.getDriverLists({ id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:value,telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
                 this.driverGather = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.driverGather,i,data.data.data.rows[i])
@@ -352,67 +483,299 @@ export default {
         },600)
     },
     selectName(val){
-        this.getDriverLists({ id:val,status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+        this.getDriverLists({ id:val,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
             this.driverName = data.data.data.rows[0].id_name
             this.driverPhone = data.data.data.rows[0].telephone
         })
     },
     findDriver(){
-        this.getDriverLists({ id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:this.driverName,telephone:this.driverPhone,auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+        this.order_data = [];
+        this.citySelected = -1;
+        this.teamStatusSelected = 4;
+        this.operationSelected = 2;
+        this.bindingSelected = 2;
+        this.serviceSelected = 2;
+        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:this.driverName,telephone:this.driverPhone,auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
             this.order_data = []
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.order_data,i,data.data.data.rows[i])
             }
+            this.pageTotal = data.data.data.total
         })
     },
-    check_driver(index,binding_id){
-        this.bindingCar({ driver_id:index,car_id:binding_id }).then((data) => {
-            if(data.data.data.car === 1){
-                this.$router.push({path:'checkDriver',query:{id:index,binding_id:binding_id}});
-            }else{
-                this.$router.push({path:'checkDriver',query:{id:index}});
-            }
-        })
+    check_driver(index){
+        this.$router.push({path:'checkDriver',query:{id:index}});
     },
     new_edit_driver(type,index){
+
+      let per_val = '' 
+      
       if(index){
-        this.$router.push({path:'newEditDriver',query:{id:index}});
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2002'){
+                    per_val = 2002
+                }
+            }
+            if(per_val === 2002){
+                this.$router.push({path:'editDriver',query:{id:index}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'editDriver',query:{id:index}});
+        }
       }else{
-        this.$router.push({path:'newEditDriver'});
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr.length; i++){
+                if(this.permission_arr[i] === '2008'){
+                    per_val = 2008
+                }
+            }
+            if(per_val === 2008){
+                this.$router.push({path:'newDriver'});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'newDriver'});
+        }
       }
     },
-    remove(index){
-        this.delDriver({ id:index }).then((data) => {
-            if(data.data.code === 1){
-                for(let i=0; i<this.order_data.length;){
-                    if(index === this.order_data[i].id){
-                        this.order_data.splice(i,1)
-                    }else{
-                        i++
-                    }
+    searchBindCar(value){
+        if(this.inputCarShake) clearTimeout(this.inputCarShake)
+        this.inputCarShake = setTimeout(()=>{
+            this.getCarLists({ id:'',status:'',car_template_id:'',start_time:'',end_time:'',car_no:value,search:'',offset:0,limit:10 }).then((data) => {
+                this.bindCarGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.bindCarGather,i,data.data.data.rows[i])
                 }
-                this.$Message.success('删除成功!');
+            })
+        },600)
+    },
+    selectBindCar(val){
+        this.getCarLists({ id:val,status:'',car_template_id:'',start_time:'',end_time:'',car_no:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.bindCar = data.data.data.rows[0].car_no
+            this.carId = val
+        })
+    },
+    handleSure(){
+        this.bindingCar({ 
+            car_id:this.carId,
+            driver_id:this.driverId,
+        }).then((data) => {
+            if(data.data.code === 1){
+                this.$Message.success('绑定成功!');
+                this.bindVisible = false;
+                if(this.pageCurrent > 1){
+                    this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize }).then((data) => {
+                        this.order_data = []
+                        for(let i=0; i<data.data.data.rows.length; i++){
+                            this.$set(this.order_data,i,data.data.data.rows[i])
+                        }
+                        this.$refs.Pagination.currentPage = this.pageCurrent;
+                        this.pageTotal = data.data.data.total
+                    })
+                }else{
+                    this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                        this.order_data = []
+                        for(let i=0; i<data.data.data.rows.length; i++){
+                            this.$set(this.order_data,i,data.data.data.rows[i])
+                        }
+                        this.pageTotal = data.data.data.total
+                    })
+                }
             }else{
                 this.$Notice.warning({
                     title: '嘀友提醒',
                     desc: data.data.msg
                 });
             }
-            return data;
-        }).then((data)=>{
-            if(data.data.code === 1){
-                if(this.order_data.length === 0){
+        })
+    },
+    un_bind_driver(type,id,bind_id){
+        let per_val = '';
+        if(type === 1){
+            
+            if(this.permission_arr[0] !== '9999'){
+
+                for(let i=0; i<this.permission_arr[2000].length; i++){
+                    if(this.permission_arr[2000][i] === '2004'){
+                        per_val = 2004
+                    }
+                }
+
+                if(per_val === 2004){
+                    this.bindVisible = true;
+                    this.driverId = id;
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '暂无权限访问！'
+                    });
+                }
+
+            }else{
+                this.bindVisible = true;
+                this.driverId = id;
+            }
+
+        }else{
+            if(this.permission_arr[0] !== '9999'){
+                for(let i=0; i<this.permission_arr[2000].length; i++){
+                    if(this.permission_arr[2000][i] === '2005'){
+                        per_val = 2005
+                    }
+                }
+
+                if(per_val === 2005){
+                    this.unbindingCar({ 
+                        car_id:bind_id,
+                        driver_id:id,
+                    }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('解绑成功!');
+                            if(this.pageCurrent > 1){
+                                this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.$refs.Pagination.currentPage = this.pageCurrent;
+                                    this.pageTotal = data.data.data.total
+                                })
+                            }else{
+                                this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.pageTotal = data.data.data.total
+                                })
+                            }
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '暂无权限访问！'
+                    });
+                }
+            }else{
+                this.unbindingCar({ 
+                    car_id:bind_id,
+                    driver_id:id,
+                }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('解绑成功!');
+                        if(this.pageCurrent > 1){
+                            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.$refs.Pagination.currentPage = this.pageCurrent;
+                                this.pageTotal = data.data.data.total
+                            })
+                        }else{
+                            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.pageTotal = data.data.data.total
+                            })
+                        }
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+            } 
+        }
+    },
+    stop_recover(type,id){
+        let per_val = '' 
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2006'){
+                    per_val = 2006
+                }
+            }
+
+            if(per_val === 2006){
+
+                this.editDriverStatus({ 
+                    id:id,
+                    status:type,
+                    server_comment:'',
+                    }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('修改成功!');
+                        if(this.pageCurrent > 1){
+                            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.$refs.Pagination.currentPage = this.pageCurrent;
+                                this.pageTotal = data.data.data.total
+                            })
+                        }else{
+                            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.pageTotal = data.data.data.total
+                            })
+                        }
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })
+
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.editDriverStatus({ 
+                id:id,
+                status:type,
+                server_comment:'',
+                }).then((data) => {
+                if(data.data.code === 1){
+                    this.$Message.success('修改成功!');
                     if(this.pageCurrent > 1){
-                        this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 2)*this.pageSize,limit:this.pageSize }).then((data) => {
+                        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize }).then((data) => {
                             this.order_data = []
                             for(let i=0; i<data.data.data.rows.length; i++){
                                 this.$set(this.order_data,i,data.data.data.rows[i])
                             }
-                            this.$refs.Pagination.currentPage = this.pageCurrent - 1;
+                            this.$refs.Pagination.currentPage = this.pageCurrent;
                             this.pageTotal = data.data.data.total
                         })
                     }else{
-                        this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
                             this.order_data = []
                             for(let i=0; i<data.data.data.rows.length; i++){
                                 this.$set(this.order_data,i,data.data.data.rows[i])
@@ -420,14 +783,123 @@ export default {
                             this.pageTotal = data.data.data.total
                         })
                     }
-                    
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+            })
+        }
+        
+    },
+    remove(index){
+
+        let per_val = '' 
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2009'){
+                    per_val = 2009
                 }
             }
-        })
+
+            if(per_val === 2009){
+
+                this.delDriver({ id:index }).then((data) => {
+                    if(data.data.code === 1){
+                        for(let i=0; i<this.order_data.length;){
+                            if(index === this.order_data[i].id){
+                                this.order_data.splice(i,1)
+                            }else{
+                                i++
+                            }
+                        }
+                        this.$Message.success('删除成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                    return data;
+                }).then((data)=>{
+                    if(data.data.code === 1){
+                        if(this.order_data.length === 0){
+                            if(this.pageCurrent > 1){
+                                this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 2)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.$refs.Pagination.currentPage = this.pageCurrent - 1;
+                                    this.pageTotal = data.data.data.total
+                                })
+                            }else{
+                                this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.pageTotal = data.data.data.total
+                                })
+                            }
+                        }
+                    }
+                })
+
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.delDriver({ id:index }).then((data) => {
+                if(data.data.code === 1){
+                    for(let i=0; i<this.order_data.length;){
+                        if(index === this.order_data[i].id){
+                            this.order_data.splice(i,1)
+                        }else{
+                            i++
+                        }
+                    }
+                    this.$Message.success('删除成功!');
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+                return data;
+            }).then((data)=>{
+                if(data.data.code === 1){
+                    if(this.order_data.length === 0){
+                        if(this.pageCurrent > 1){
+                            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(this.pageCurrent - 2)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.$refs.Pagination.currentPage = this.pageCurrent - 1;
+                                this.pageTotal = data.data.data.total
+                            })
+                        }else{
+                            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.pageTotal = data.data.data.total
+                            })
+                        }
+                    }
+                }
+            })
+        }
     },
     changePage(page){
         this.pageCurrent = page;
-        this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(page-1)*this.pageSize,limit:this.pageSize }).then((data) => {
+        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(page-1)*this.pageSize,limit:this.pageSize }).then((data) => {
             this.order_data = []
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.order_data,i,data.data.data.rows[i])
@@ -436,7 +908,7 @@ export default {
     },
     changePageSize(size){
         this.pageSize = size;
-        this.getDriverLists({ id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:size }).then((data) => {
+        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:this.date_val[0],end_time:this.date_val[1],id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:size }).then((data) => {
             this.order_data = []
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.order_data,i,data.data.data.rows[i])
@@ -446,11 +918,28 @@ export default {
     },
   },
   mounted () {
-    this.getDriverLists({ id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-      for(let i=0; i<data.data.data.rows.length; i++){
-        this.$set(this.order_data,i,data.data.data.rows[i])
-      }
-      this.pageTotal = data.data.data.total
+
+    this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+      
+    this.getDriverHost().then((data) => {
+        this.$set(this.leagueDriverData,0,{ title:'加盟司机',colSpan:5,value:data.data.data.total,em:true})
+        this.$set(this.leagueDriverData,1,{ title:'已审核司机',colSpan:5,value:data.data.data.auth,em:true})
+        this.$set(this.leagueDriverData,2,{ title:'待审核司机',colSpan:5,value:data.data.data.wait_auth,em:true})
+        this.$set(this.leagueDriverData,3,{ title:'停运司机',colSpan:5,value:data.data.data.stop_service,em:false})
+    })
+
+    this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+        if(data.data.code === 1){
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        }else{
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
     })
 
     this.getCompanyCityLists({ id:'',search:'',offset:0,limit:10,status:1 }).then((data) => {
@@ -459,18 +948,47 @@ export default {
         }
     })
 
+    this.getFleetLists({ id:'',status:1,fleet_no:'',fleet_name:'',search:'',offset:0,limit:10000 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.carTeamOptions,i,data.data.data.rows[i])
+        }
+    })
+
   },
   activated () {
-    this.getDriverLists({ id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-      for(let i=0; i<data.data.data.rows.length; i++){
-        this.$set(this.order_data,i,data.data.data.rows[i])
-      }
-      this.pageTotal = data.data.data.total
+
+    this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+
+    this.getDriverHost().then((data) => {
+        this.$set(this.leagueDriverData,0,{ title:'加盟司机',colSpan:5,value:data.data.data.total,em:true})
+        this.$set(this.leagueDriverData,1,{ title:'已审核司机',colSpan:5,value:data.data.data.auth,em:true})
+        this.$set(this.leagueDriverData,2,{ title:'待审核司机',colSpan:5,value:data.data.data.wait_auth,em:true})
+        this.$set(this.leagueDriverData,3,{ title:'停运司机',colSpan:5,value:data.data.data.stop_service,em:false})
+    })
+
+    this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+        if(data.data.code === 1){
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        }else{
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
     })
 
     this.getCompanyCityLists({ id:'',search:'',offset:0,limit:10,status:1 }).then((data) => {
         for(let i=0; i<data.data.data.rows.length; i++){
             this.$set(this.city_arr,i,data.data.data.rows[i])
+        }
+    })
+
+    this.getFleetLists({ id:'',status:1,fleet_no:'',fleet_name:'',search:'',offset:0,limit:10000 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.carTeamOptions,i,data.data.data.rows[i])
         }
     })
 

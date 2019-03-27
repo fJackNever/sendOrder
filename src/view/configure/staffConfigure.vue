@@ -2,7 +2,7 @@
   <div style="padding:0 24px 24px;">
     <Row style="margin-top:10px;">
       <Card shadow>
-        <topHost :itemCol="CheckHostData" :style="{ cursor:'pointer'}"></topHost>
+        <topHost :itemCol="CheckHostData" ></topHost>
 
         <Divider />
 
@@ -54,10 +54,11 @@
                 </FormItem>
 
                 <FormItem label="员工密码" prop="staffPwd">
-                    <Input type="password" v-model="formValidate.staffPwd" placeholder="请输入员工密码" style="width:200px"></Input>
+                    <Input type="password" v-model="formValidate.staffPwd" placeholder="请输入员工密码" style="width:200px;margin-right:10px;" :disabled="pwdDisabled"></Input>
+                    <Button type="primary" @click="changePwd">修改密码</Button>
                 </FormItem>
 
-                <FormItem label="权限" prop="permission">
+                <FormItem label="权限" prop="permission" v-if="per_show">
                     <Tree :data="permisssion_arr" show-checkbox multiple @on-check-change="getCheckVal"></Tree>
                 </FormItem>
 
@@ -110,10 +111,7 @@ export default {
       inputName:'',
       nameGather:[],
       inputPhone:'',
-      CheckHostData: [
-        { title:'在职员工',colSpan:4,value:60,em:true},
-        { title:'离职员工',colSpan:4,value:8,em:false},
-      ],
+      CheckHostData: [],
 
       order_columns: [
             {
@@ -160,6 +158,9 @@ export default {
         pageCurrent:1,
         edit_id:'',
         inputNameShake:'',
+        new_permission_arr:[],
+        pwdDisabled:true,
+        per_show:true,
     }
   },
   methods: {
@@ -167,7 +168,11 @@ export default {
       'getPermissionLists',
       'addAdminUser',
       'editAdminUser',
+      'editAdminUserNoPwdSuper',
+      'editAdminUserSuper',
+      'editAdminUserNoPwd',
       'getAdminUserLists',
+      'getAdminUserHost',
     ]),
     searchName(value){
       if(this.inputNameShake) clearTimeout(this.inputNameShake)
@@ -195,7 +200,11 @@ export default {
             this.pageTotal = data.data.data.total
         })
     },
+    changePwd(){
+        this.pwdDisabled = false;
+    },
     new_edit_staff(type,index,name,telephone,role,password,permission,status){
+        this.pwdDisabled = true,
         this.staffModal = true;
         if(index){
             this.add_edit = 2;
@@ -205,12 +214,22 @@ export default {
             this.$set(this.formValidate,'staffRole',role)
             this.$set(this.formValidate,'staffPwd',password)
 
-            let new_arr = permission.split(",");
+            let new_arr = JSON.parse(permission);
 
+            if(JSON.parse(permission)[0] === '9999'){
+                this.per_show = false;
+            }else{
+                this.per_show = true;
+            }
+
+            for(let i=0; i<JSON.parse(permission).length; i++){
+                this.new_permission_arr.push(JSON.parse(permission)[i])
+            }
             
             for(let i=0; i<new_arr.length; i++){
                 for(let j=0; j<this.permisssion_arr.length; j++){
                     if(new_arr[i] === this.permisssion_arr[j]['code']){
+                        
                         this.$set(this.permisssion_arr[j],'checked',true)
                     }
 
@@ -271,13 +290,27 @@ export default {
                         }
                     })
             }else{
-                    this.editAdminUser({ 
+                
+                let newArr = [];
+                if(this.per_val_arr && this.per_val_arr.length === 0){
+                    if(this.new_permission_arr && this.new_permission_arr.length !== 0){
+                        for(let i=0; i<this.new_permission_arr.length; i++){
+                            newArr.push(this.new_permission_arr[i])
+                        }
+                    }
+                }else{
+                    for(let i=0; i<this.per_val_arr.length; i++){
+                        newArr.push(this.per_val_arr[i])
+                    }
+                }
+
+                if(this.pwdDisabled && !this.per_show){
+                    //超级管理员&&未修改密码
+                    this.editAdminUserNoPwdSuper({ 
                         id:this.edit_id,
                         name:this.formValidate.staffName,
                         telephone:this.formValidate.staffTelephone,
                         role:this.formValidate.staffRole,
-                        password:this.formValidate.staffPwd,
-                        permission:JSON.stringify(this.per_val_arr),
                         status:this.formValidate.status,
                         }).then((data) => {
                         if(data.data.code === 1){
@@ -306,6 +339,116 @@ export default {
                             });
                         }
                     })
+                }else if(!this.pwdDisabled && !this.per_show){
+                    //超级管理员&&修改了密码
+                    this.editAdminUserSuper({ 
+                        id:this.edit_id,
+                        name:this.formValidate.staffName,
+                        telephone:this.formValidate.staffTelephone,
+                        role:this.formValidate.staffRole,
+                        password:this.formValidate.staffPwd,
+                        status:this.formValidate.status,
+                        }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                            if(this.pointPageCurrent > 1){
+                                this.getAdminUserLists({ id:'',status:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize, }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.$refs.Pagination.currentPage = this.pageCurrent;
+                                })
+                            }else{
+                                this.getAdminUserLists({ id:'',status:'',search:'',offset:0,limit:this.pageSize, }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                })
+                            }
+                            this.staffModal = false;
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }else if(this.pwdDisabled && this.per_show){
+                    //普通管理员&&未修改密码
+                    this.editAdminUserNoPwd({ 
+                        id:this.edit_id,
+                        name:this.formValidate.staffName,
+                        telephone:this.formValidate.staffTelephone,
+                        role:this.formValidate.staffRole,
+                        permission:JSON.stringify(newArr),
+                        status:this.formValidate.status,
+                        }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                            if(this.pointPageCurrent > 1){
+                                this.getAdminUserLists({ id:'',status:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize, }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.$refs.Pagination.currentPage = this.pageCurrent;
+                                })
+                            }else{
+                                this.getAdminUserLists({ id:'',status:'',search:'',offset:0,limit:this.pageSize, }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                })
+                            }
+                            this.staffModal = false;
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }else if(!this.pwdDisabled && this.per_show){
+                    //普通管理员&&修改了密码
+                    this.editAdminUser({ 
+                        id:this.edit_id,
+                        name:this.formValidate.staffName,
+                        telephone:this.formValidate.staffTelephone,
+                        role:this.formValidate.staffRole,
+                        password:this.formValidate.staffPwd,
+                        permission:JSON.stringify(newArr),
+                        status:this.formValidate.status,
+                        }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('修改成功!');
+                            if(this.pointPageCurrent > 1){
+                                this.getAdminUserLists({ id:'',status:'',search:'',offset:(this.pageCurrent - 1)*this.pageSize,limit:this.pageSize, }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.$refs.Pagination.currentPage = this.pageCurrent;
+                                })
+                            }else{
+                                this.getAdminUserLists({ id:'',status:'',search:'',offset:0,limit:this.pageSize, }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                })
+                            }
+                            this.staffModal = false;
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })
+                }
             }
                
         })
@@ -331,6 +474,13 @@ export default {
     },
   },
   mounted () {
+      
+      
+    this.getAdminUserHost().then((data) => {
+        this.$set(this.CheckHostData,0,{ title:'在职员工',colSpan:4,value:data.data.data.work,em:true})
+        this.$set(this.CheckHostData,1,{ title:'离职员工',colSpan:4,value:data.data.data.leave,em:false})
+    })
+
     this.getPermissionLists().then((data) => {
         for(let i=0; i<data.data.data.length; i++){
             data.data.data[i]['title'] = data.data.data[i]['name'];
@@ -356,6 +506,12 @@ export default {
 
   },
   activated () {
+
+    this.getAdminUserHost().then((data) => {
+        this.$set(this.CheckHostData,0,{ title:'在职员工',colSpan:4,value:data.data.data.work,em:true})
+        this.$set(this.CheckHostData,1,{ title:'离职员工',colSpan:4,value:data.data.data.leave,em:false})
+    })
+
     this.getPermissionLists().then((data) => {
         for(let i=0; i<data.data.data.length; i++){
             data.data.data[i]['title'] = data.data.data[i]['name'];

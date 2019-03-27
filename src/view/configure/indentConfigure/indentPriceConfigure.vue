@@ -10,7 +10,7 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_use(2,row.id,row.order_type,row.use_car_type_id,row.amount,row.status)">编辑</Button>
+                <Button type="primary" style="margin-right: 5px" @click="new_edit_use(2,row.id,row.order_type,row.use_car_type_id,row.amount/100,row.status)">编辑</Button>
             </template>
         </Table>
         <Page ref="usePagination" show-sizer @on-change="changeUsePage" @on-page-size-change="changeUsePageSize" style="margin-top:15px;"/>
@@ -26,7 +26,7 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_point(2,row.id,row.use_car_type_id,row.amount,row.status,row.limit_km,row.addition_amount)">编辑</Button>
+                <Button type="primary" style="margin-right: 5px" @click="new_edit_point(2,row.id,row.use_car_type_id,row.amount/100,row.limit_km,row.addition_amount/100,row.status)">编辑</Button>
             </template>
         </Table>
         <Page ref="pointPagination" show-sizer @on-change="changePointPage" @on-page-size-change="changePointPageSize" style="margin-top:15px;"/>
@@ -156,7 +156,12 @@ export default {
             },
             {
                 title: '价格',
-                key: 'amount'
+                key: 'amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.amount/100),
+                    ]);
+                }
             },
             {
                 title: '状态',
@@ -193,7 +198,12 @@ export default {
             },
             {
                 title: '起步价',
-                key: 'amount'
+                key: 'amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.amount/100),
+                    ]);
+                }
             },
             {
                 title: '基础公里数',
@@ -281,7 +291,7 @@ export default {
                     this.addOrderType({ 
                         order_type: this.formUseValidate.indentType,
                         use_car_type_id: this.formUseValidate.useCarType,
-                        amount: this.formUseValidate.usePrice,
+                        amount: this.formUseValidate.usePrice * 100,
                         status: this.formUseValidate.status,
                         limit_km: '',
                         addition_amount: '',
@@ -303,10 +313,10 @@ export default {
                     })
             }else{
                     this.editOrderType({ 
-                        id:this.point_edit_id,
+                        id:this.use_edit_id,
                         order_type: this.formUseValidate.indentType,
                         use_car_type_id: this.formUseValidate.useCarType,
-                        amount: this.formUseValidate.usePrice,
+                        amount: this.formUseValidate.usePrice * 100,
                         status: this.formUseValidate.status,
                         limit_km: '',
                         addition_amount: '',
@@ -341,16 +351,16 @@ export default {
                
         })
     },
-    new_edit_point(type,index,use_car_type_id,amount,status,limit_km,addition_amount){
+    new_edit_point(type,index,use_car_type_id,amount,limit_km,addition_amount,status){
       this.pointPriceModal = true
       this.point_edit_id = index;
       if(index){
         this.point_add_edit = 2;
-        this.$set(this.formPointValidate,'useCarType',use_car_type_id)
-        this.$set(this.formPointValidate,'usePrice',amount)
-        this.$set(this.formPointValidate,'status',status)
+        this.$set(this.formPointValidate,'pointCarType',use_car_type_id)
+        this.$set(this.formPointValidate,'startFare',amount)
         this.$set(this.formPointValidate,'exceedMileage',limit_km)
         this.$set(this.formPointValidate,'charge',addition_amount)
+        this.$set(this.formPointValidate,'status',status)
       }else{
         this.point_add_edit = 1;
         this.$refs['formPointValidate'].resetFields();
@@ -380,10 +390,10 @@ export default {
                     this.addOrderType({ 
                         order_type: 3,
                         use_car_type_id: this.formPointValidate.pointCarType,
-                        amount: this.formPointValidate.startFare,
+                        amount: this.formPointValidate.startFare * 100,
                         status: this.formUseValidate.status,
                         limit_km: this.formPointValidate.exceedMileage,
-                        addition_amount: this.formPointValidate.charge*100,
+                        addition_amount: this.formPointValidate.charge * 100,
                         }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('新增成功!');
@@ -402,11 +412,13 @@ export default {
                     })
             }else{
                     this.editOrderType({ 
-                        id:this.use_edit_id,
+                        id:this.point_edit_id,
                         order_type: 3,
                         use_car_type_id: this.formPointValidate.pointCarType,
-                        amount: this.formPointValidate.startFare,
+                        amount: this.formPointValidate.startFare * 100,
                         status: this.formPointValidate.status,
+                        limit_km: this.formPointValidate.exceedMileage,
+                        addition_amount: this.formPointValidate.charge * 100,
                         }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('修改成功!');
@@ -426,7 +438,7 @@ export default {
                                     }
                                 })
                             }
-                            this.usePriceModal = false;
+                            this.pointPriceModal = false;
                         }else{
                             this.$Notice.warning({
                                 title: '嘀友提醒',

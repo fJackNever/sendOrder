@@ -6,33 +6,31 @@
         <span style="font-size:14px;padding-right:10px;">司机姓名</span>
         <AutoComplete
         v-model="driverName"
-        :data="driverGather"
         @on-search="searchName"
+        @on-select="selectName"
         placeholder="请输入司机姓名"
-        style="width:200px;" transfer></AutoComplete>
+        style="width:200px;" transfer>
+            <Option v-for="(item,index) in driverGather" :value="item.id" :key="index" >{{ item.id_name }}</Option>
+        </AutoComplete>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">司机手机号</span>
-        <AutoComplete
-        v-model="driverPhone"
-        :data="driverPhoneGather"
-        @on-search="searchPhone"
-        placeholder="请输入乘客手机号"
-        style="width:200px" transfer></AutoComplete>
+        <Input v-model="driverPhone" placeholder="请输入乘客手机号" style="width:200px"></Input>
 
-        <Button type="success" style="margin-left:30px;">查询</Button>
+        <Button type="success" style="margin-left:30px;" @click="find_indent()">查询</Button>
 
     </Card>
     <Card shadow style="margin-top:30px;">
-    <Table border :columns="order_columns" :data="order_data">
-        <template slot-scope="{ row }" slot="name">
-            <strong>{{ row.name }}</strong>
-        </template>
-        <template slot-scope="{ row, index }" slot="action">
-            <Button type="primary" style="margin-right: 5px" @click="check_record(index+1,'count')">收支记录</Button>
-            <Button type="error" @click="penalty_award(index+1,1)">罚款</Button>
-            <Button type="error" @click="penalty_award(index+1,2)">罚款</Button>
-        </template>
-    </Table>
+        <Table border :columns="order_columns" :data="order_data">
+            <template slot-scope="{ row }" slot="name">
+                <strong>{{ row.name }}</strong>
+            </template>
+            <template slot-scope="{ row, index }" slot="action">
+                <Button type="primary" style="margin-right: 5px" @click="get_pay_record(row.driver_id)">收支记录</Button>
+                <Button type="success" style="margin-right: 5px" @click="penalty_award(row.driver_id,1)">奖励</Button>
+                <Button type="error" @click="penalty_award(row.driver_id,2)">罚款</Button>
+            </template>
+        </Table>
+        <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
     </Card>
     <Modal :title="modalTitle" v-model="visible" :footer-hide="true">
         <Form ref="formValidate" :model="formValidate" :rules="ruleValidate" :label-width="120" >
@@ -52,7 +50,7 @@
 
 <script>
 import topHost from '_c/top-host'
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Modal,Form,FormItem,InputNumber, } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Modal,Form,FormItem,InputNumber,Page, } from 'iview'
 import { mapActions } from 'vuex'
 export default {
   name: 'driverWallet',
@@ -71,13 +69,13 @@ export default {
     Form,
     FormItem,
     InputNumber,
+    Page,
   },
   data () {
     return {
       driverName:'',
       driverGather:[],
       driverPhone:'',
-      driverPhoneGather:[],
       countHostData: [
         { title:'所有司机',colSpan:3,value:60,em:true},
         { title:'已结算金额',colSpan:3,value:8,em:true},
@@ -86,99 +84,317 @@ export default {
       order_columns: [
             {
                 title: '司机姓名',
-                key: 'id'
+                key: 'driver_name'
             },
             {
                 title: '司机手机号',
-                key: 'name'
-            },
-            {
-                title: '司机已结算',
-                key: 'name'
-            },
-            {
-                title: '司机已体现',
-                key: 'start_address'
-            },
-            {
-                title: '提现中',
-                key: 'start_address'
-            },
-            {
-                title: '奖励金额',
-                key: 'name'
-            },
-            {
-                title: '罚款金额',
                 key: 'telephone'
             },
             {
+                title: '司机已结算',
+                key: 'settled_amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.settled_amount/100),
+                    ]);
+                }
+            },
+            {
+                title: '司机未结算',
+                key: 'unsettle_amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.unsettle_amount/100),
+                    ]);
+                }
+            },
+            {
+                title: '司机已提现',
+                key: 'withdrawed_amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.withdrawed_amount/100),
+                    ]);
+                }
+            },
+            {
+                title: '提现中',
+                key: 'withdrawing_amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.withdrawing_amount/100),
+                    ]);
+                }
+            },
+            {
+                title: '奖励金额',
+                key: 'reward_amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.reward_amount/100),
+                    ]);
+                }
+            },
+            {
+                title: '罚款金额',
+                key: 'fine_amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.fine_amount/100),
+                    ]);
+                }
+            },
+            {
                 title: '钱包余额',
-                key: 'status'
+                key: 'amount',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.amount/100),
+                    ]);
+                }
             },
             {
                 title: '操作',
                 slot: 'action',
-                width: 230,
+                width: 250,
                 align: 'center'
             }
         ],
         order_data: [],
         visible:false,
         formValidate:{
-            autoPrice:0,
+            penalty_award_price:0,
         },
+        ruleValidate:{},
         modalTitle:'司机罚款',
         labelTitle:'罚款金额',
+        pageTotal:0,
+        pageSize:10,
+        pageCurrent:1,
+        penalty_award_id:'',
+        penalty_award_type:1,
+        permission_arr:'',
     }
   },
   methods: {
     ...mapActions([
-      
+      'getDriverAmountLists',
+      'getDriverLists',
+      'rewardDriver',
+      'fineDriver',
+      'getSettleHost'
     ]),
     searchName(value){
-      this.driverGather = !value ? [] : [
-          value,
-          value + value,
-          value + value + value
-      ];
+      if(this.inputNameShake) clearTimeout(this.inputNameShake)
+        this.inputNameShake = setTimeout(()=>{
+            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:value,telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+                this.driverGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.driverGather,i,data.data.data.rows[i])
+                }
+            })
+        },600)
     },
-    searchPhone(value){
-      this.driverPhoneGather = !value ? [] : [
-          value,
-          value + value,
-          value + value + value
-      ];
+    selectName(val){
+        this.getDriverLists({ id:val,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.driverName = data.data.data.rows[0].id_name;
+            this.driverPhone = data.data.data.rows[0].telephone;
+        })
     },
-    check_record(index,type){
-        this.$router.push({path:'check_indent',query:{id:index,type}});
+    find_indent(){
+        this.getDriverAmountLists({ driver_id:'',id_name:this.driverName,telephone:this.driverPhone,offset:0,limit:10 }).then((data) => {
+            this.order_data = []
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        })
+    },
+    get_pay_record(index){
+        this.$router.push({path:'get_pay_detail',query:{id:index}});
     },
     penalty_award(index,type){
-        this.visible = true;
+
+        let per_val = '' 
+        
         if(type === 1){
-            this.modalTitle = '司机罚款';
-            this.labelTitle = '罚款金额';
+
+            if(this.permission_arr[0] !== '9999'){
+                for(let i=0; i<this.permission_arr[6000].length; i++){
+                    if(this.permission_arr[6000][i] === '6012'){
+                        per_val = 6012
+                    }
+                }
+                if(per_val === 6012){
+                    this.visible = true;
+                    this.penalty_award_id = index;
+                    this.$refs['formValidate'].resetFields();
+                    this.penalty_award_type = 1;
+                    this.modalTitle = '司机奖励';
+                    this.labelTitle = '奖励金额';
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '暂无权限访问！'
+                    });
+                }
+            }else{
+                this.visible = true;
+                this.penalty_award_id = index;
+                this.$refs['formValidate'].resetFields();
+                this.penalty_award_type = 1;
+                this.modalTitle = '司机奖励';
+                this.labelTitle = '奖励金额';
+            }
+
+            
         }else{
-            this.modalTitle = '司机奖励';
-            this.labelTitle = '奖励金额';
+
+            if(this.permission_arr[0] !== '9999'){
+                for(let i=0; i<this.permission_arr[6000].length; i++){
+                    if(this.permission_arr[6000][i] === '6011'){
+                        per_val = 6011
+                    }
+                }
+                if(per_val === 6011){
+                    this.visible = true;
+                    this.penalty_award_id = index;
+                    this.$refs['formValidate'].resetFields();
+                    this.penalty_award_type = 2;
+                    this.modalTitle = '司机罚款';
+                    this.labelTitle = '罚款金额';
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '暂无权限访问！'
+                    });
+                }
+            }else{
+                this.visible = true;
+                this.penalty_award_id = index;
+                this.$refs['formValidate'].resetFields();
+                this.penalty_award_type = 2;
+                this.modalTitle = '司机罚款';
+                this.labelTitle = '罚款金额';
+            }
+
+            
         }
+    },
+    changePage(page){
+        this.pageCurrent = page;
+        this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:(page-1)*this.pageSize,limit:this.pageSize }).then((data) => {
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+        })
+    },
+    changePageSize(size){
+        this.pageSize = size;
+        this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:size }).then((data) => {
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        })
     },
     handleSubmit(name){
         this.$refs[name].validate((valid) => {
             if (valid) {
-                this.$Message.success('Success!');
+                if(this.penalty_award_type === 1){
+                    this.rewardDriver({ 
+                        driver_id:this.penalty_award_id,
+                        amount: this.formValidate.penalty_award_price * 100,
+                        comment:this.formValidate.desc || '',
+                    }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('奖励成功!');
+                            this.visible = false;
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+
+                        return data;
+                    }).then(data => {
+                        if(data.data.code === 1){
+                            this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:10 }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.pageTotal = data.data.data.total
+                            })
+                        }
+                    })
+                }else{
+                    this.fineDriver({ 
+                        driver_id:this.penalty_award_id,
+                        amount: this.formValidate.penalty_award_price * 100,
+                        comment:this.formValidate.desc || '',
+                     }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('罚款成功!');
+                            this.visible = false;
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+
+                        return data;
+                    }).then(data => {
+                        if(data.data.code === 1){
+                            this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:10 }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.pageTotal = data.data.data.total
+                            })
+                        }
+                    })
+                }
             } else {
-                this.$Message.error('Fail!');
+                this.$Message.error('提交失败!');
             }
         })
     }
   },
   mounted () {
-    // this.getOrderData().then((data) => {
-    //   for(let i=0; i<data.data.data.rows.length; i++){
-    //     this.$set(this.order_data,i,data.data.data.rows[i])
-    //   }
-    // })
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+    this.getSettleHost().then((data) => {
+        this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:data.data.data.total_driver,em:true})
+        this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
+        this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+    })
+
+    this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:10 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.order_data,i,data.data.data.rows[i])
+        }
+        this.pageTotal = data.data.data.total
+    })
+  },
+  activated () {
+    this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+    this.getSettleHost().then((data) => {
+        this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:data.data.data.total_driver,em:true})
+        this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
+        this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+    })
+
+    this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:10 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.order_data,i,data.data.data.rows[i])
+        }
+        this.pageTotal = data.data.data.total
+    })
   }
 }
 </script>

@@ -113,10 +113,10 @@ export default {
       ];
     },
     checkCus(index,type){
-        this.$router.push({name:'new_edit_customer',query:{id:index,type}});
+        this.$router.push({name:'edit_customer',query:{id:index,type}});
     },
     editCus(index){
-        this.$router.push({name:'new_edit_customer',query:{id:index}});
+        this.$router.push({name:'edit_customer',query:{id:index}});
     },
     remove(index){
 

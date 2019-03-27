@@ -2,33 +2,37 @@
   <div style="padding:0 24px 24px;">
       <Card shadow style="margin-top:10px;">
 
-        <span style="font-size:14px;padding-right:10px;padding-left:20px;">时间</span>
-        <DatePicker type="daterange" :start-date="new Date()" placement="bottom-end" placeholder="请选择时间范围" style="width: 200px;margin-left:20px;"></DatePicker>
+        <span style="font-size:14px;padding-right:10px;">时间</span>
+        <DatePicker type="daterange" @on-change="changeDate" :value="date_val" :start-date="new Date()" placement="bottom-end" placeholder="请选择时间范围" style="width: 200px;margin-left:20px;" transfer></DatePicker>
 
         <Divider />
 
-        <span style="font-size:14px;padding-right:10px;padding-left:20px;">客户名称</span>
+        <span style="font-size:14px;padding-right:10px;">客户名称</span>
         <AutoComplete
         v-model="cusName"
-        :data="cusNameGather"
         @on-search="searchCusName"
-        placeholder="请输入车牌号"
-        style="width:200px;" transfer></AutoComplete>
+        @on-select="selectCusName"
+        placeholder="请输入客户名称"
+        style="width:200px;" transfer>
+          <Option v-for="(item,index) in cusNameGather" :value="item.id" :key="index" >{{ item.name }}</Option>
+        </AutoComplete>
+
+        <span style="font-size:14px;padding-right:10px;padding-left:20px;">客户手机号</span>
+        <Input v-model="phone" placeholder="请输入联系人手机号" style="width:200px;"></Input>
 
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">联系人</span>
         <AutoComplete
         v-model="contactPer"
-        :data="contactPerGather"
         @on-search="searchContactPer"
+        @on-select="selectContactPer"
         placeholder="请输入联系人"
-        style="width:200px;" transfer></AutoComplete>
+        style="width:200px;" transfer>
+          <Option v-for="(item,index) in contactPerGather" :value="item.id" :key="index" >{{ item.contact }}</Option>
+        </AutoComplete>
 
-        <span style="font-size:14px;padding-right:10px;padding-left:20px;">联系人手机号</span>
-        <Input v-model="phone" placeholder="请输入联系人手机号" style="width:400px"></Input>
-
-        <Button type="success" style="margin-left:30px;">查询</Button>
-        <Button type="success" style="margin-left:30px;" @click="new_edit_indent(1)">添加客户</Button>
-        <Button type="success" style="margin-left:30px;">推广二维码</Button>
+        <Button type="success" style="margin-left:30px;" @click="checkCus">查询</Button>
+        <Button type="success" style="margin-left:30px;" @click="new_edit_cus(1)">添加客户</Button>
+        <!-- <Button type="success" style="margin-left:30px;">推广二维码</Button> -->
 
         <Divider />
         
@@ -39,17 +43,18 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="checkVehicle(index+1,'check')">查看与审核</Button>
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_vehicle(2,index+1)">编辑</Button>
-                <Button type="error" @click="deleteRecord(index+1)">删除</Button>
+                <Button type="primary" style="margin-right: 5px" @click="checkVehicle(row.id,'check')">查看与审核</Button>
+                <Button type="primary" style="margin-right: 5px" @click="new_edit_cus(2,row.id)">编辑</Button>
+                <Button type="error" @click="deleteRecord(row.id)">删除</Button>
             </template>
         </Table>
+        <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
       </Card>
   </div>
 </template>
 
 <script>
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page } from 'iview'
 import { mapActions } from 'vuex'
 export default {
   name: 'customerList',
@@ -63,9 +68,11 @@ export default {
     Option,
     Table,
     AutoComplete,
+    Page,
   },
   data () {
     return {
+      date_val:['',''],
       cusName:'',
       cusNameGather:[],
       contactPer:'',
@@ -74,76 +81,331 @@ export default {
       order_columns: [
             {
                 title: '客户名称',
-                key: 'id'
+                key: 'name'
+            },
+            {
+                title: '客户手机号',
+                key: 'telephone'
             },
             {
                 title: '联系人',
-                key: 'name'
-            },
-            {
-                title: '联系人手机号',
-                key: 'name'
+                key: 'contact'
             },
             {
                 title: '邮箱',
-                key: 'start_address'
+                key: 'email'
             },
             {
                 title: '注册时间',
-                key: 'start_address'
+                key: 'create_time'
             },
             {
                 title: '审核状态',
-                key: 'name'
+                key: 'status',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',this.getAuthCarStatus(params.row.status)),
+                    ]);
+                }
             },
             {
                 title: '操作',
                 slot: 'action',
-                width: 230,
+                width: 260,
                 align: 'center'
             }
         ],
-        order_data: []
+        order_data: [],
+        pageTotal:0,
+        pageSize:10,
+        pageCurrent:1,
+        inpuCusShake:'',
+        inpuConShake:'',
+        permission_arr:''
     }
   },
   methods: {
     ...mapActions([
-      
+      'getCustomerLists',
+      'delCustomer',
     ]),
+    getAuthCarStatus(status){
+        if(status === 0){
+            return '待审核'
+        }else if(status === 1){
+            return '审核通过'
+        }else if(status === 2){
+            return '审核拒绝'
+        }
+    },
+    changeDate(date){
+      this.cusName = '';
+      this.contactPer = '';
+      this.phone = '';
+      this.$set(this.date_val,0,date[0])
+      this.$set(this.date_val,1,date[1])
+      this.getCustomerLists({ id:'',status:'',type:'',start_time:date[0],end_time:date[1],name:'',telephone:'',contact:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+          this.order_data = []
+          for(let i=0; i<data.data.data.rows.length; i++){
+              this.$set(this.order_data,i,data.data.data.rows[i])
+          }
+          this.pageTotal = data.data.data.total
+      })
+    },
     searchCusName(value){
-      this.cusNameGather = !value ? [] : [
-          value,
-          value + value,
-          value + value + value
-      ];
+      if(this.inpuCusShake) clearTimeout(this.inputCusShake)
+        this.inpuCusShake = setTimeout(()=>{
+            this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+                this.cusNameGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.cusNameGather,i,data.data.data.rows[i])
+                }
+            })
+        },600)
+    },
+    selectCusName(val){
+        this.getCustomerLists({ id:val,status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.cusName = data.data.data.rows[0].name
+        })
     },
     searchContactPer(value){
-      this.contactPerGather = !value ? [] : [
-          value,
-          value + value,
-          value + value + value
-      ];
+      if(this.inpuConShake) clearTimeout(this.inputConShake)
+        this.inpuConShake = setTimeout(()=>{
+            this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+                this.contactPerGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.contactPerGather,i,data.data.data.rows[i])
+                }
+            })
+        },600)
+    },
+    selectContactPer(val){
+        this.getCustomerLists({ id:val,status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.contactPer = data.data.data.rows[0].contact
+            this.phone = data.data.data.rows[0].telephone
+        })
+    },
+    checkCus(){
+      this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:this.cusName,telephone:this.phone,contact:this.contactPer,search:'',offset:0,limit:10 }).then((data) => {
+          for(let i=0; i<data.data.data.rows.length; i++){
+              this.$set(this.order_data,i,data.data.data.rows[i])
+          }
+          this.pageTotal = data.data.data.total
+      })
     },
     checkVehicle(index,type){
-      this.$router.push({path:'new_edit_customer',query:{id:index,type}});
+
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[1000].length; i++){
+                if(this.permission_arr[1000][i] === '1004'){
+                    per_val = 1004
+                }
+            }
+            if(per_val === 1004){
+                this.$router.push({path:'edit_customer',query:{id:index,type}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'edit_customer',query:{id:index,type}});
+        }
+
+      
     },
-    new_edit_indent(type,index){
+    new_edit_cus(type,index){
       if(index){
-        this.$router.push({path:'new_edit_customer',query:{id:index}});
+
+          if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[1000].length; i++){
+                if(this.permission_arr[1000][i] === '1003'){
+                    per_val = 1003
+                }
+            }
+            if(per_val === 1003){
+                this.$router.push({path:'edit_customer',query:{id:index}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'edit_customer',query:{id:index}});
+        }
+
+        
       }else{
-        this.$router.push({path:'new_edit_customer'});
+
+          if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[1000].length; i++){
+                if(this.permission_arr[1000][i] === '1001'){
+                    per_val = 1001
+                }
+            }
+            if(per_val === 1001){
+                this.$router.push({path:'new_customer'});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'new_customer'});
+        }
+
+        
       }
     },
     deleteRecord(index){
 
-    }
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[1000].length; i++){
+                if(this.permission_arr[1000][i] === '1005'){
+                    per_val = 1005
+                }
+            }
+            if(per_val === 1005){
+                
+                this.delCustomer({ id:index }).then((data) => {
+                    if(data.data.code === 1){
+                        for(let i=0; i<this.order_data.length;){
+                            if(index === this.order_data[i].id){
+                                this.order_data.splice(i,1)
+                            }else{
+                                i++
+                            }
+                        }
+                        this.$Message.success('删除成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                    return data;
+                }).then((data)=>{
+                    if(data.data.code === 1){
+                        if(this.order_data.length === 0){
+                            if(this.pageCurrent > 1){
+                                this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:(this.pageCurrent - 2)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.$refs.Pagination.currentPage = this.pageCurrent - 1;
+                                    this.pageTotal = data.data.data.total
+                                })
+                            }else{
+                                this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                    this.order_data = []
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.pageTotal = data.data.data.total
+                                })
+                            }
+                            
+                        }
+                    }
+                })
+
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            
+            this.delCustomer({ id:index }).then((data) => {
+                if(data.data.code === 1){
+                    for(let i=0; i<this.order_data.length;){
+                        if(index === this.order_data[i].id){
+                            this.order_data.splice(i,1)
+                        }else{
+                            i++
+                        }
+                    }
+                    this.$Message.success('删除成功!');
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+                return data;
+            }).then((data)=>{
+                if(data.data.code === 1){
+                    if(this.order_data.length === 0){
+                        if(this.pageCurrent > 1){
+                            this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:(this.pageCurrent - 2)*this.pageSize,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.$refs.Pagination.currentPage = this.pageCurrent - 1;
+                                this.pageTotal = data.data.data.total
+                            })
+                        }else{
+                            this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                this.order_data = []
+                                for(let i=0; i<data.data.data.rows.length; i++){
+                                    this.$set(this.order_data,i,data.data.data.rows[i])
+                                }
+                                this.pageTotal = data.data.data.total
+                            })
+                        }
+                        
+                    }
+                }
+            })
+
+        }
+
+      
+    },
+    changePage(page){
+        this.pageCurrent = page;
+        this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:(page-1)*this.pageSize,limit:this.pageSize }).then((data) => {
+            this.order_data = []
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+        })
+    },
+    changePageSize(size){
+        this.pageSize = size;
+        this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:0,limit:size }).then((data) => {
+            this.order_data = []
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        })
+    },
   },
   mounted () {
-    // this.getOrderData().then((data) => {
-    //   for(let i=0; i<data.data.data.rows.length; i++){
-    //     this.$set(this.order_data,i,data.data.data.rows[i])
-    //   }
-    // })
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+    this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.order_data,i,data.data.data.rows[i])
+        }
+        this.pageTotal = data.data.data.total
+    })
+  },
+
+  activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+    this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+        for(let i=0; i<data.data.data.rows.length; i++){
+            this.$set(this.order_data,i,data.data.data.rows[i])
+        }
+        this.pageTotal = data.data.data.total
+    })
   }
 }
 </script>

@@ -18,7 +18,7 @@ export default {
    */
   baseUrl: {
     dev: '',
-    pro: 'http://yc.diuber.com/'
+    pro: 'https://yc.diuber.com/'
   },
   /**
    * @description 默认打开的首页的路由name值，默认为home
