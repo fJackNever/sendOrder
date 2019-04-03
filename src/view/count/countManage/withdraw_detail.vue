@@ -25,7 +25,7 @@
                 <Input v-model="formValidate.withdraw_money" disabled></Input>
             </FormItem>
             <FormItem label="提现状态" prop="withdraw_status" :label-width="120">
-                <Select v-model="formValidate.withdraw_status" style="width:80px;margin-right:10px;" transfer disabled>
+                <Select v-model="formValidate.withdraw_status" style="width:100px;margin-right:10px;" transfer disabled>
                     <Option :value="0">未处理</Option>
                     <Option :value="1">提现成功</Option>
                     <Option :value="2">提现驳回</Option>

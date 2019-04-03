@@ -3,13 +3,18 @@
       <Card shadow :title="cardTitle" class="indentCard">
         <div slot="title" class="cardSlot">
             <div style="width:200px;margin-top:6px;">{{cardTitle}}</div>
-            <Steps :current="current">
+            <Steps :current="current" v-if="current !== 6">
                 <Step title="待处理"></Step>
                 <Step title="待抢单"></Step>
                 <Step title="已接单"></Step>
                 <Step title="出发接乘客"></Step>
                 <Step title="已接到乘客"></Step>
                 <Step title="已完成"></Step>
+            </Steps>
+            <Steps :current="current - 3" v-if="current === 6">
+                <Step title="待处理"></Step>
+                <Step title="待抢单"></Step>
+                <Step title="已接单"></Step>
                 <Step title="已取消"></Step>
             </Steps>
         </div>
@@ -84,7 +89,7 @@
                 </Form>
             </Col>
             <Col span="16">
-                <baidu-map class="bm-view" center="上海" ak="A1KbCD1wUrTDiAxu46BtmVhI">
+                <baidu-map class="bm-view" center="上海" ak="A1KbCD1wUrTDiAxu46BtmVhI" :zoom="10">
                     <bm-navigation anchor="BMAP_ANCHOR_TOP_RIGHT"></bm-navigation>
                     <bm-driving
                         :start="indentStartAddress"
@@ -293,7 +298,47 @@ export default {
             this.$set(this.formDriverValidate,'carType',data.data.data.use_car_type_name || '');
             this.$set(this.formDriverValidate,'carColor',data.data.data.car_color || '');
 
-            this.minuteTime = data.data.data.order_start_limit_time
+            if(data.data.data.order_start_limit_time > 0){
+                let j_start_time = data.data.data.order_start_limit_time,decimals_hour,decimals_min;
+                if(j_start_time/(60*24) > 1){
+                    decimals_hour = ((j_start_time/(60*24)).toFixed(2) + "").split(".")[1];
+                    if((parseInt(decimals_hour) / 100 * 24 ) / 60 > 1){
+                        decimals_min = (((parseInt(decimals) / 100 * 24 ) / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = parseInt(j_start_time/(60*24)) + '天' + parseInt( ((parseInt(decimals_hour) / 100 * 24 ) / 60) ) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'
+                    }else{
+                        this.minuteTime = parseInt(j_start_time/(60*24)) + '天' + parseInt(parseInt(decimals_hour) / 100 * 24) + '分钟'
+                    }
+                    
+                }else{
+                    
+                    if(j_start_time / 60 > 1){
+                        decimals_min = ((j_start_time / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = parseInt(j_start_time / 60) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'; 
+                    }else{
+                        this.minuteTime = j_start_time + "分钟"
+                    }
+                }
+            }else{
+                let j_start_time = Math.abs(data.data.data.order_start_limit_time),decimals_hour,decimals_min;
+                if(j_start_time/(60*24) > 1){
+                    decimals_hour = ((j_start_time/(60*24)).toFixed(2) + "").split(".")[1];
+                    if((parseInt(decimals_hour) / 100 * 24 ) / 60 > 1){
+                        decimals_min = (((parseInt(decimals) / 100 * 24 ) / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = '-'+parseInt(j_start_time/(60*24)) + '天' + parseInt( ((parseInt(decimals_hour) / 100 * 24 ) / 60) ) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'
+                    }else{
+                        this.minuteTime = '-'+parseInt(j_start_time/(60*24)) + '天' + parseInt(parseInt(decimals_hour) / 100 * 24) + '分钟'
+                    }
+                    
+                }else{
+                    
+                    if(j_start_time / 60 > 1){
+                        decimals_min = ((j_start_time / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = '-'+parseInt(j_start_time / 60) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'; 
+                    }else{
+                        this.minuteTime = '-'+j_start_time + "分钟"
+                    }
+                }
+            }
 
             if(data.data.data.status <= 2){
                 this.first_show = true;
@@ -455,7 +500,47 @@ export default {
             this.$set(this.formDriverValidate,'carType',data.data.data.use_car_type_name || '');
             this.$set(this.formDriverValidate,'carColor',data.data.data.car_color || '');
 
-            this.minuteTime = data.data.data.order_start_limit_time
+            if(data.data.data.order_start_limit_time > 0){
+                let j_start_time = data.data.data.order_start_limit_time,decimals_hour,decimals_min;
+                if(j_start_time/(60*24) > 1){
+                    decimals_hour = ((j_start_time/(60*24)).toFixed(2) + "").split(".")[1];
+                    if((parseInt(decimals_hour) / 100 * 24 ) / 60 > 1){
+                        decimals_min = (((parseInt(decimals) / 100 * 24 ) / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = parseInt(j_start_time/(60*24)) + '天' + parseInt( ((parseInt(decimals_hour) / 100 * 24 ) / 60) ) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'
+                    }else{
+                        this.minuteTime = parseInt(j_start_time/(60*24)) + '天' + parseInt(parseInt(decimals_hour) / 100 * 24) + '分钟'
+                    }
+                    
+                }else{
+                    
+                    if(j_start_time / 60 > 1){
+                        decimals_min = ((j_start_time / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = parseInt(j_start_time / 60) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'; 
+                    }else{
+                        this.minuteTime = j_start_time + "分钟"
+                    }
+                }
+            }else{
+                let j_start_time = Math.abs(data.data.data.order_start_limit_time),decimals_hour,decimals_min;
+                if(j_start_time/(60*24) > 1){
+                    decimals_hour = ((j_start_time/(60*24)).toFixed(2) + "").split(".")[1];
+                    if((parseInt(decimals_hour) / 100 * 24 ) / 60 > 1){
+                        decimals_min = (((parseInt(decimals) / 100 * 24 ) / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = '-'+parseInt(j_start_time/(60*24)) + '天' + parseInt( ((parseInt(decimals_hour) / 100 * 24 ) / 60) ) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'
+                    }else{
+                        this.minuteTime = '-'+parseInt(j_start_time/(60*24)) + '天' + parseInt(parseInt(decimals_hour) / 100 * 24) + '分钟'
+                    }
+                    
+                }else{
+                    
+                    if(j_start_time / 60 > 1){
+                        decimals_min = ((j_start_time / 60).toFixed(2) + "").split(".")[1];
+                        this.minuteTime = '-'+parseInt(j_start_time / 60) + '小时' + parseInt(parseInt(decimals_min) / 100 * 60) + '分钟'; 
+                    }else{
+                        this.minuteTime = '-'+j_start_time + "分钟"
+                    }
+                }
+            }
 
             if(data.data.data.status <= 2){
                 this.first_show = true;

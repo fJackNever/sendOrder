@@ -40,7 +40,7 @@
       <Row :gutter="16" style="background:#fff;margin:10px 0;">
         <Col span="20">
           <Card  style="margin-top:10px;">
-              <baidu-map class="bm-view" center="上海" ak="A1KbCD1wUrTDiAxu46BtmVhI">
+              <baidu-map class="bm-view" center="上海" ak="A1KbCD1wUrTDiAxu46BtmVhI" :zoom="10">
                 <bm-navigation anchor="BMAP_ANCHOR_TOP_RIGHT"></bm-navigation>
                 <bm-driving
                     start="广兰路(地铁站)"

@@ -23,7 +23,7 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="success" style="margin-right: 5px" @click="edit(row.id,row.name,row.status)">编辑</Button>
+                <Button type="success" style="margin-right: 10px" @click="edit(row.id,row.name,row.status)">编辑</Button>
                 <Button type="error" @click="remove(row.id)">删除</Button>
             </template>
         </Table>
@@ -46,6 +46,15 @@
                 </FormItem>
             </Form>
         </Modal>
+        <Modal 
+            title="是否删除"
+            v-model="deleteVisible" 
+            @on-ok="confirmDelete"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
   </div>
 </template>
 
@@ -75,7 +84,7 @@ export default {
       add_edit:1,
       edit_id:'',
       formValidate: {
-          status:0,
+          status:1,
       },
       ruleValidate: {},
       order_columns: [
@@ -108,6 +117,9 @@ export default {
         pageTotal:0,
         pageSize:10,
         pageCurrent:1,
+        permission_arr:'',
+        deleteVisible:false,
+        deleteId:'',
     }
   },
   methods: {
@@ -140,24 +152,65 @@ export default {
         this.order_data = []
         if(this.status === 2){
             this.getUseCarTypeLists({ id:'',status:'',search:this.searchVal,offset:0,limit:10 }).then((data) => {
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else{
             this.getUseCarTypeLists({ id:'',status:this.status,search:this.searchVal,offset:0,limit:10 }).then((data) => {
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         } 
     },
     addUseType(){
-        this.visible = true; 
-        this.$refs['formValidate'].resetFields();
-        this.add_edit = 1;
+        
+        let per_val = ''
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[7000].length; i++){
+                if(this.permission_arr[7000][i] === '7002'){
+                    per_val = 7002
+                }
+            }
+            if(per_val === 7002){
+                this.visible = true; 
+                this.$refs['formValidate'].resetFields();
+                this.add_edit = 1;
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.visible = true; 
+            this.$refs['formValidate'].resetFields();
+            this.add_edit = 1;
+        }
+        
     },
     edit(index,name,status){
         this.visible = true;
@@ -167,16 +220,21 @@ export default {
         this.edit_id = index;
     },
     remove(index){
-        this.delUseCarType({ id:index }).then((data) => {
+        this.deleteVisible = true;
+        this.deleteId = index;
+    },
+    confirmDelete(){
+        this.delUseCarType({ id:this.deleteId }).then((data) => {
             if(data.data.code === 1){
                 for(let i=0; i<this.order_data.length;){
-                    if(index === this.order_data[i].id){
+                    if(this.deleteId === this.order_data[i].id){
                         this.order_data.splice(i,1)
                     }else{
                         i++
                     }
                 }
                 this.$Message.success('删除成功!');
+                this.deleteVisible = false;
             }else{
                 this.$Notice.warning({
                     title: '嘀友提醒',
@@ -283,33 +341,81 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getUseCarTypeLists({ id:'',status:'',search:this.searchVal,offset:0,limit:size }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
   },
   mounted () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getUseCarTypeLists({ id:'',status:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   },
   activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getUseCarTypeLists({ id:'',status:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   }
 }
 </script>
 
 <style lang="less">
-
+.reassignModal{
+    .ivu-modal{
+        width: 300px !important;
+    }
+    .ivu-modal-header{
+        border-bottom:none;
+        .ivu-modal-header-inner{
+            text-align: center;
+        }
+    }
+    .ivu-modal-body{
+        display: none;
+    }
+    .ivu-modal-footer{
+        border-top:none;
+        text-align: center;
+    }
+}
 </style>

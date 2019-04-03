@@ -13,7 +13,11 @@
         <span style="font-size:14px;padding-right:10px;">订单编号</span>
         <Input v-model="indentNum" placeholder="请输入订单编号" style="width:200px"></Input>
 
-        <span style="font-size:14px;padding-right:10px;padding-left:20px;">司机姓名</span>
+        <Button type="success" style="margin-left:30px;" @click="find_indent(1)">查询</Button>
+
+        <Divider />
+
+        <span style="font-size:14px;padding-right:10px;">司机姓名</span>
         <AutoComplete
         v-model="driverName"
         @on-search="searchName"
@@ -36,7 +40,7 @@
             <Option v-for="(item,index) in cusNameGather" :value="item.id" :key="index" >{{ item.name }}</Option>
         </AutoComplete>
 
-        <Button type="success" style="margin-left:30px;" @click="find_indent()">查询</Button>
+        <Button type="success" style="margin-left:30px;" @click="find_indent(2)">查询</Button>
 
         <Divider />
     </Card>
@@ -46,7 +50,7 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="edit_indent(row.order_id)">详情</Button>
+                <Button type="primary" style="margin-right: 10px" @click="edit_indent(row.id)">详情</Button>
                 <Button type="error" @click="count_order(row.id)" v-if="row.driver_settle_status === 0">结算</Button>
                 <Button type="error" v-if="row.driver_settle_status === 1" disabled>已结算</Button>
             </template>
@@ -55,26 +59,32 @@
     </Card>
     <Modal title="结算" v-model="countVisible" :footer-hide="true">
         <Form ref="formValidate" :model="formValidate" :label-width="120" >
-            <div style="margin:10px 0;">订单自动结算</div>
-            <FormItem label="订单价格" prop="autoPrice" :label-width="120">
-                <InputNumber :min="0" v-model="formValidate.autoPrice"></InputNumber>
-            </FormItem>
-            <FormItem label="司机收入" prop="autoIncome" :label-width="120">
-                <InputNumber :min="0" v-model="formValidate.autoIncome"></InputNumber>
-            </FormItem>
-            <FormItem label="平台费用" prop="autoCharge" :label-width="120">
-                <InputNumber :min="0" v-model="formValidate.autoCharge"></InputNumber>
-            </FormItem>
-            <div style="margin:10px 0;">人工结算</div>
-            <FormItem label="订单价格" prop="humanPrice" :label-width="120">
-                <InputNumber :min="0" v-model="formValidate.humanPrice" @on-change="changeHuman"></InputNumber>
-            </FormItem>
-            <FormItem label="司机收入" prop="humanIncome" :label-width="120">
-                <InputNumber :min="0" v-model="formValidate.humanIncome" @on-change="changeHuman"></InputNumber>
-            </FormItem>
-            <FormItem label="平台费用" prop="humanCharge" :label-width="120">
-                <InputNumber :min="0" v-model="formValidate.humanCharge" @on-change="changeHuman"></InputNumber>
-            </FormItem>
+            <Row>
+                <Col span="12">
+                    <div style="margin:24px 0;text-align:center;">订单自动结算</div>
+                    <FormItem label="订单价格" prop="autoPrice" :label-width="120">
+                        <InputNumber :min="0" v-model="formValidate.autoPrice" disabled></InputNumber>
+                    </FormItem>
+                    <FormItem label="司机收入" prop="autoIncome" :label-width="120">
+                        <InputNumber :min="0" v-model="formValidate.autoIncome" disabled></InputNumber>
+                    </FormItem>
+                    <FormItem label="平台费用" prop="autoCharge" :label-width="120">
+                        <InputNumber :min="0" v-model="formValidate.autoCharge" disabled></InputNumber>
+                    </FormItem>
+                </Col>
+                <Col span="12">
+                    <div style="margin:24px 0;text-align:center;">人工结算</div>
+                    <FormItem label="订单价格" prop="humanPrice" :label-width="120">
+                        <InputNumber :min="0" v-model="formValidate.humanPrice" @on-change="changeHuman"></InputNumber>
+                    </FormItem>
+                    <FormItem label="司机收入" prop="humanIncome" :label-width="120">
+                        <InputNumber :min="0" v-model="formValidate.humanIncome" @on-change="changeHuman"></InputNumber>
+                    </FormItem>
+                    <FormItem label="平台费用" prop="humanCharge" :label-width="120">
+                        <InputNumber :min="0" v-model="formValidate.humanCharge" @on-change="changeHuman"></InputNumber>
+                    </FormItem>
+                </Col>
+            </Row>
             <FormItem label="备注" prop="desc" style="width:400px;">
                 <Input v-model="formValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入备注"></Input>
             </FormItem>
@@ -88,11 +98,13 @@
 
 <script>
 import topHost from '_c/top-host'
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Modal,Form,FormItem,InputNumber,Page, } from 'iview'
+import { Row,Col,Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Modal,Form,FormItem,InputNumber,Page, } from 'iview'
 import { mapActions } from 'vuex'
 export default {
   name: 'countList',
   components: {
+    Row,
+    Col,
     Card,
     Input,
     Button,
@@ -121,7 +133,8 @@ export default {
       order_columns: [
             {
                 title: '城市',
-                key: 'city'
+                key: 'city',
+                width:100,
             },
             {
                 title: '订单编号',
@@ -185,7 +198,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 230,
+                width: 260,
                 align: 'center'
             }
         ],
@@ -218,35 +231,71 @@ export default {
     updateTable(index){
         if(index === 0){
             this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:0,customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 1){
             this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:1,customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 2){
             this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:0,customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 3){
             this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:1,customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
@@ -283,17 +332,45 @@ export default {
             this.cusName = data.data.data.rows[0].name
         })
     },
-    find_indent(){
-        this.getSettleOrderLists({ id:'',order_entity_id:this.indentNum,driver_name:this.driverName,customer_name:this.cusName,driver_tel:this.driverPhone,driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-            this.pageTotal = data.data.data.total
-        })
+    find_indent(type){
+        if(type === 1){
+            this.getSettleOrderLists({ id:'',order_entity_id:this.indentNum,driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+            })
+        }else{
+            this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:this.driverName,customer_name:this.cusName,driver_tel:this.driverPhone,driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+            })
+        }
     },
     edit_indent(index){
-
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[5000].length; i++){
                 if(this.permission_arr[5000][i] === '5003'){
@@ -301,7 +378,7 @@ export default {
                 }
             }
             if(per_val === 5003){
-                this.$router.push({name:'check_indent',query:{id:index}});
+                this.$router.push({name:'count_detail',query:{id:index}});
             }else{
                 this.$Notice.warning({
                     title: '嘀友提醒',
@@ -309,12 +386,12 @@ export default {
                 });
             }
         }else{
-            this.$router.push({name:'check_indent',query:{id:index}});
+            this.$router.push({name:'count_detail',query:{id:index}});
         }
 
     },
     count_order(index){
-
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[6000].length; i++){
                 if(this.permission_arr[6000][i] === '6001'){
@@ -331,6 +408,9 @@ export default {
                     this.$set(this.formValidate,'autoPrice',data.data.data.order_amount/100)
                     this.$set(this.formValidate,'autoIncome',data.data.data.driver_amount/100)
                     this.$set(this.formValidate,'autoCharge',data.data.data.plat_amount/100)
+                    this.$set(this.formValidate,'humanPrice',data.data.data.order_amount/100)
+                    this.$set(this.formValidate,'humanIncome',data.data.data.driver_amount/100)
+                    this.$set(this.formValidate,'humanCharge',data.data.data.plat_amount/100)
                 })
             }else{
                 this.$Notice.warning({
@@ -348,6 +428,9 @@ export default {
                 this.$set(this.formValidate,'autoPrice',data.data.data.order_amount/100)
                 this.$set(this.formValidate,'autoIncome',data.data.data.driver_amount/100)
                 this.$set(this.formValidate,'autoCharge',data.data.data.plat_amount/100)
+                this.$set(this.formValidate,'humanPrice',data.data.data.order_amount/100)
+                this.$set(this.formValidate,'humanIncome',data.data.data.driver_amount/100)
+                this.$set(this.formValidate,'humanCharge',data.data.data.plat_amount/100)
             })
         }
 
@@ -383,7 +466,7 @@ export default {
                         order_amount:this.formValidate.autoPrice*100,
                         driver_amount:this.formValidate.autoIncome*100,
                         plat_amount:this.formValidate.autoCharge*100,
-                        driver_settle_comment:'',
+                        driver_settle_comment:this.formValidate.desc || '',
                         }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('结算成功!');
@@ -470,33 +553,68 @@ export default {
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getSettleHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'未结算订单',colSpan:3,value:data.data.data.unsettle_count,em:true})
-        this.$set(this.countHostData,1,{ title:'已结算订单',colSpan:3,value:data.data.data.settled_count,em:true})
-        this.$set(this.countHostData,2,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
-        this.$set(this.countHostData,3,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'未结算订单',colSpan:3,value:data.data.data.unsettle_count,em:true})
+            this.$set(this.countHostData,1,{ title:'已结算订单',colSpan:3,value:data.data.data.settled_count,em:true})
+            this.$set(this.countHostData,2,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
+            this.$set(this.countHostData,3,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'未结算订单',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'已结算订单',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,2,{ title:'未结算金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,3,{ title:'已结算金额',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   },
   activated () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getSettleHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'未结算订单',colSpan:3,value:data.data.data.unsettle_count,em:true})
-        this.$set(this.countHostData,1,{ title:'已结算订单',colSpan:3,value:data.data.data.settled_count,em:true})
-        this.$set(this.countHostData,2,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
-        this.$set(this.countHostData,3,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'未结算订单',colSpan:3,value:data.data.data.unsettle_count,em:true})
+            this.$set(this.countHostData,1,{ title:'已结算订单',colSpan:3,value:data.data.data.settled_count,em:true})
+            this.$set(this.countHostData,2,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
+            this.$set(this.countHostData,3,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'未结算订单',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'已结算订单',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,2,{ title:'未结算金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,3,{ title:'已结算金额',colSpan:3,value:0,em:false})
+        }
     })
 
     this.getSettleOrderLists({ id:'',order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   }
 }

@@ -85,7 +85,7 @@ export default {
           teamName: '',
           desc:'',
           max:0,
-          teamStatus:0,
+          teamStatus:1,
       },
       visible:false,
       allPicModal:'',
@@ -180,10 +180,14 @@ export default {
     },
   },
   mounted () {
-
+      if(this.$route.query.type === 'new'){
+          this.$refs['formValidate'].resetFields();
+      }
   },
   activated () {
-
+      if(this.$route.query.type === 'new'){
+          this.$refs['formValidate'].resetFields();
+      }
   }
 }
 </script>

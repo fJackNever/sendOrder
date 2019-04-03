@@ -54,6 +54,16 @@ export default {
       })
     }
   },
+  mounted () {
+    if(window.localStorage.getItem("ueiwrhifjbidfdasnf_company_name")){
+      this.$set(this.form,'name',window.localStorage.getItem("ueiwrhifjbidfdasnf_company_name"))
+    }
+    
+    if(window.localStorage.getItem("ueiwrhifjbidfdasnf_telephone")){
+      this.$set(this.form,'telephone',window.localStorage.getItem("ueiwrhifjbidfdasnf_telephone"))
+    }
+      
+  },
   components: {
     Form,
     FormItem,

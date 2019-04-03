@@ -20,7 +20,7 @@
                     </FormItem>
 
                     <FormItem label="订单开始时间" prop="indentStartDate" :label-width="100">
-                        <DatePicker type="date" placeholder="请选择日期" v-model="formValidate.indentStartDate" style="width:200px" @on-change="changePrice('indentStartDate',$event)"></DatePicker>
+                        <DatePicker type="date" placeholder="请选择日期" :options="optionsDis" v-model="formValidate.indentStartDate" style="width:200px" @on-change="changePrice('indentStartDate',$event)"></DatePicker>
                     </FormItem>
                     <FormItem prop="indentStartTime" :label-width="100">
                         <TimePicker type="time" v-model="formValidate.indentStartTime" placeholder="请选择时间" style="width: 168px" @on-change="changePrice('indentStartTime',$event)"></TimePicker>
@@ -37,29 +37,30 @@
                             <Option v-for="(item,index) in cusArr" :value="item.id" :key="index" >{{ item.name }}</Option>
                         </Select>
                     </FormItem>
-
+                    
                     <FormItem label="订单起点" prop="startAddress">
                         <AutoComplete
                         v-model="formValidate.startAddress"
                         @on-search="searchStartAddress"
-                        @on-select="selectStartAddress"
                         placeholder="请输入订单起点"
                         style="width:200px" transfer>
                             <Option v-for="(item,index) in startAddressGather" :value="item.name" :key="index" >{{ item.name }}</Option>
                         </AutoComplete>
-                        <!-- <Icon type="ios-pin" :size="25" style="margin-left:10px;cursor:pointer;" @click="locate(1)" v-if="start_icon_show"/> -->
+
                     </FormItem>
 
                     <FormItem label="订单终点" prop="endAddress" v-if="end_address_show">
                         <AutoComplete
                         v-model="formValidate.endAddress"
                         @on-search="searchEndAddress"
-                        @on-select="selectEndAddress"
                         placeholder="请输入订单终点"
                         style="width:200px" transfer>
                             <Option v-for="(item,index) in endAddressGather" :value="item.name" :key="index" >{{ item.name }}</Option>
                         </AutoComplete>
-                        <!-- <Icon type="ios-pin" :size="25" style="margin-left:10px;cursor:pointer;" @click="locate(2)"/> -->
+                    </FormItem>
+
+                    <FormItem>
+                        <Button type="primary" @click="handleAddress">确认选择地址</Button>
                     </FormItem>
 
                     <FormItem label="平台价格" prop="platformPrice">
@@ -94,7 +95,7 @@
                 </Form>
             </Col>
             <Col span="16">
-                <baidu-map class="bm-view" :center="center_city" ak="A1KbCD1wUrTDiAxu46BtmVhI" >
+                <baidu-map class="bm-view" :center="center_city" ak="A1KbCD1wUrTDiAxu46BtmVhI" :zoom="10" >
                     <bm-navigation anchor="BMAP_ANCHOR_TOP_RIGHT"></bm-navigation>
                     <bm-driving
                         :start="indentStartAddress"
@@ -156,19 +157,26 @@ export default {
       cardTitle:'新增订单',
       current: 0,
       formValidate: {
-          indentType:1,
-          startAddress: '',
-          endAddress: '',
+          indentType:3,
           platformPrice:0,
           indentPrice: 0,
           deiverPrice:0,
           passengerName: '',
           passengerPhone: '',
           desc: '',
+          indentStartDate:moment().format('YYYY-MM-DD'),
+          indentStartTime:moment().add(1, 'hours').format('hh:mm:ss'),
+      },
+      optionsDis:{
+        disabledDate (date) {
+            return date && date.valueOf() < Date.now() - 86400000;
+        }
       },
       cityArr:[],
       ruleValidate: {
-
+        passengerPhone:[
+            { required: true, message: '乘客电话必须填写', trigger: 'blur' }
+        ],
       },
       useCarArr:[],
       start_location:'',
@@ -184,8 +192,7 @@ export default {
       markerLng:'',
       markerLat:'',
       auto_num:0,
-      start_icon_show:true,
-      end_address_show:false,
+      end_address_show:true,
       order_distance:'',
       startAddressGather:[],
       inputStartAddressShake:'',
@@ -193,7 +200,7 @@ export default {
       inputEndAddressShake:'',
       path_show:true,
       point_show:true,
-      center_city:'上海'
+      center_city:'上海',
     }
   },
   methods: {
@@ -214,22 +221,19 @@ export default {
             }).then( response => response.json() )
             .then(data => {
                 this.startAddressGather = []
-                for(let i=0; i<data.result.length; i++){
-                    this.$set(this.startAddressGather,i,data.result[i])
+                
+                var new_arr = [];
+                var obj = {};
+                new_arr = data.result.reduce(function(item, next) {
+                    obj[next.name] ? '' : obj[next.name] = true && item.push(next);
+                    return item;
+                }, []);
+
+                for(let i=0; i<new_arr.length; i++){
+                    this.$set(this.startAddressGather,i,new_arr[i])
                 }
             })
         },600)
-    },
-    selectStartAddress(){
-        if(this.start_icon_show){
-            this.path_show = false;
-            this.point_show = true;
-            this.locate(1)
-        }else{
-            this.path_show = true;
-            this.point_show = false;
-            this.locate(2)
-        }
     },
     searchEndAddress(value){
       if(this.inputEndAddressShake) clearTimeout(this.inputEndAddressShake)
@@ -240,16 +244,30 @@ export default {
             }).then( response => response.json() )
             .then(data => {
                 this.endAddressGather = []
-                for(let i=0; i<data.result.length; i++){
-                    this.$set(this.endAddressGather,i,data.result[i])
+                var new_arr = [];
+                var obj = {};
+                new_arr = data.result.reduce(function(item, next) {
+                    obj[next.name] ? '' : obj[next.name] = true && item.push(next);
+                    return item;
+                }, []);
+
+                for(let i=0; i<new_arr.length; i++){
+                    this.$set(this.endAddressGather,i,new_arr[i])
                 }
+
             })
         },600)
     },
-    selectEndAddress(){
-        this.path_show = true;
-        this.point_show = false;
-        this.locate(2)
+    handleAddress(){
+        if(!this.end_address_show){
+            this.path_show = false;
+            this.point_show = true;
+            this.locate(1)
+        }else if(this.end_address_show){
+            this.path_show = true;
+            this.point_show = false;
+            this.locate(2)
+        }
     },
     changeIp(val){
         this.$set(this.formValidate,'platformPrice',val - this.formValidate.deiverPrice)
@@ -307,10 +325,8 @@ export default {
         if(type === 'indentType'){
 
             if(val === 3){
-                this.start_icon_show = false;
                 this.end_address_show = true;
             }else{
-                this.start_icon_show = true;
                 this.end_address_show = false;
             }
             
@@ -553,11 +569,14 @@ export default {
                             })
                         }).then(()=>{
                             this.changePrice('endAddress')
+                        }).then(()=>{
+                            this.indentStartAddress = this.formValidate.startAddress;
+                            this.indentEndAddress = this.formValidate.endAddress;
                         })
                     })
 
-                    this.indentStartAddress = this.formValidate.startAddress;
-                    this.indentEndAddress = this.formValidate.endAddress;
+                    
+                    
 
                 }
             }else{
@@ -622,9 +641,11 @@ export default {
     },
   },
   mounted () {
+      
       this.auto_num = 0;
       this.path_show = true;
       this.point_show = true;
+      this.end_address_show = true;
           this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.useCarArr,i,data.data.data.rows[i])
@@ -645,50 +666,52 @@ export default {
               this.center_city = data.data.data.rows[0].city
           })
 
-          this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:1000 }).then((data) => {
+          this.getCustomerLists({ id:'',status:1,type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:1000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.cusArr,i,data.data.data.rows[i])
             }
+            this.cusId = data.data.data.rows[0].id
             return data;
           }).then(data=>{
-              this.cusId = data.data.data.rows[0].id
               this.$set(this.formValidate,'cusName',data.data.data.rows[0].id)
           })
   },
-  activated () {
-      this.auto_num = 0;
-      this.path_show = true;
-      this.point_show = true;
-          this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.useCarArr,i,data.data.data.rows[i])
-            }
-            return data;
-          }).then(data=>{
-              this.$set(this.formValidate,'modelRequire',data.data.data.rows[0].id)
-          })
+//   activated () {
 
-          this.getCompanyCityLists({ id:'',search:'',offset:0,limit:10000,status:1 }).then((data) => {
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.cityArr,i,data.data.data.rows[i])
-            }
-            return data;
-          }).then(data=>{
-              this.$set(this.formValidate,'indentCity',data.data.data.rows[0].id + ',' + data.data.data.rows[0].city)
-              this.addressCity = data.data.data.rows[0].city
-              this.center_city = data.data.data.rows[0].city
-          })
+//       this.auto_num = 0;
+//       this.path_show = true;
+//       this.point_show = true;
+//       this.end_address_show = true;
+//           this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
+//             for(let i=0; i<data.data.data.rows.length; i++){
+//                 this.$set(this.useCarArr,i,data.data.data.rows[i])
+//             }
+//             return data;
+//           }).then(data=>{
+//               this.$set(this.formValidate,'modelRequire',data.data.data.rows[0].id)
+//           })
 
-          this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:1000 }).then((data) => {
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.cusArr,i,data.data.data.rows[i])
-            }
-            return data;
-          }).then(data=>{
-              this.cusId = data.data.data.rows[0].id
-              this.$set(this.formValidate,'cusName',data.data.data.rows[0].id)
-          })
-  }
+//           this.getCompanyCityLists({ id:'',search:'',offset:0,limit:10000,status:1 }).then((data) => {
+//             for(let i=0; i<data.data.data.rows.length; i++){
+//                 this.$set(this.cityArr,i,data.data.data.rows[i])
+//             }
+//             return data;
+//           }).then(data=>{
+//               this.$set(this.formValidate,'indentCity',data.data.data.rows[0].id + ',' + data.data.data.rows[0].city)
+//               this.addressCity = data.data.data.rows[0].city
+//               this.center_city = data.data.data.rows[0].city
+//           })
+
+//           this.getCustomerLists({ id:'',status:1,type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:1000 }).then((data) => {
+//             for(let i=0; i<data.data.data.rows.length; i++){
+//                 this.$set(this.cusArr,i,data.data.data.rows[i])
+//             }
+//             this.cusId = data.data.data.rows[0].id
+//             return data;
+//           }).then(data=>{
+//               this.$set(this.formValidate,'cusName',data.data.data.rows[0].id)
+//           })
+//   }
 }
 </script>
 

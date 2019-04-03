@@ -55,6 +55,167 @@ export default [
   },
 
   {
+    path: '/merchant',
+    name: 'merchant',
+    meta: {
+      hideInBread: true,
+      access:['merchantCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'merchantInfo',
+        name: 'merchantInfo',
+        meta: {
+          icon: 'md-contact',
+          title: '商家信息',
+          menuType:8
+        },
+        component: () => import('@/view/personalCenter/merchantInfo.vue'),
+      },
+    ]
+  },
+
+  {
+    path: '/merchant',
+    name: 'merchant',
+    meta: {
+      hideInBread: true,
+      access:['merchantCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'updatePwd',
+        name: 'updatePwd',
+        meta: {
+          icon: 'ios-lock-outline',
+          title: '修改密码',
+          menuType:8
+        },
+        component: () => import('@/view/personalCenter/updatePwd.vue'),
+      },
+    ]
+  },
+
+  {
+    path: '/merchantIndent',
+    name: 'merchantIndent',
+    meta: {
+      hideInBread: true,
+      access:['merchantIndentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'merchantIndentList',
+        name: 'merchantIndentList',
+        meta: {
+          icon: 'ios-list-box-outline',
+          title: '订单列表',
+          menuType:9
+        },
+        component: () => import('@/view/merchantIndent/merchantIndentList.vue'),
+      },
+    ]
+  },
+
+  {
+    path: '/merchantIndent',
+    name: 'merchantIndent',
+    meta: {
+      hideInMenu: true,
+      access:['merchantIndentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'newMerchantIndent',
+        name: 'newMerchantIndent',
+        meta: {
+          title: '新增订单',
+          menuType:9,
+          notCache:true,
+        },
+        component: () => import('@/view/merchantIndent/newMerchantIndent.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/merchantIndent',
+    name: 'merchantIndent',
+    meta: {
+      hideInMenu: true,
+      access:['merchantIndentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'merchantIndentDetail',
+        name: 'merchantIndentDetail',
+        meta: {
+          title: '订单详情',
+          menuType:9
+        },
+        component: () => import('@/view/merchantIndent/merchantIndentDetail.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/merchantIndent',
+    name: 'merchantIndent',
+    meta: {
+      hideInBread: true,
+      access:['merchantIndentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'companyBill',
+        name: 'companyBill',
+        meta: {
+          icon: 'ios-copy-outline',
+          title: '公司对账单',
+          menuType:9
+        },
+        component: () => import('@/view/companyBill/companyBill.vue'),
+      },
+    ]
+  },
+
+  {
+    path: '/merchantIndent',
+    name: 'merchantIndent',
+    meta: {
+      hideInMenu: true,
+      access:['merchantIndentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'companyBillDetail',
+        name: 'companyBillDetail',
+        meta: {
+          title: '对账单详情',
+          menuType:9
+        },
+        component: () => import('@/view/companyBill/companyBillDetail.vue')
+      },
+    ]
+  },
+
+ 
+
+  {
     path: '/league',
     name: 'league',
     meta: {
@@ -92,7 +253,7 @@ export default [
         name: 'checkDriver',
         meta: {
           title: '查看加盟司机',
-          menuType:2
+          menuType:2,
         },
         component: () => import('@/view/driver/driverManage/checkDriver.vue')
       },
@@ -114,7 +275,8 @@ export default [
         name: 'newDriver',
         meta: {
           title: '新增加盟司机',
-          menuType:2
+          menuType:2,
+          notCache:true,
         },
         component: () => import('@/view/driver/driverManage/newDriver.vue')
       },
@@ -204,7 +366,8 @@ export default [
         name: 'newMotorcade',
         meta: {
           title: '创建车队',
-          menuType:2
+          menuType:2,
+          notCache:true,
         },
         component: () => import('@/view/driver/motorcadeManage/newMotorcade.vue')
       },
@@ -317,7 +480,8 @@ export default [
         name: 'new_indent',
         meta: {
           title: '新增订单',
-          menuType:3
+          menuType:3,
+          notCache:true,
         },
         component: () => import('@/view/indent/indentManage/new_indent.vue')
       },
@@ -364,6 +528,28 @@ export default [
           menuType:3
         },
         component: () => import('@/view/indent/indentManage/check_indent.vue')
+      },
+    ]
+  },
+
+  {
+    path: '/indent',
+    name: 'indent',
+    meta: {
+      hideInMenu: true,
+      access:['indentCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'assign_detail',
+        name: 'assign_detail',
+        meta: {
+          title: '指派详情',
+          menuType:3
+        },
+        component: () => import('@/view/indent/indentManage/assign_detail.vue')
       },
     ]
   },
@@ -477,6 +663,29 @@ export default [
           menuType:4
         },
         component: () => import('@/view/count/countManage/countList.vue')
+      },
+    ]
+  },
+  
+  {
+    path: '/count',
+    name: 'count',
+    meta: {
+      hideInMenu: true,
+      access:['countCheck'],
+      requireIsLogin: true,
+    },
+    component: Main,
+    children: [
+      {
+        path: 'count_detail',
+        name: 'count_detail',
+        meta: {
+          icon: 'ios-paper-outline',
+          title: '结算详情',
+          menuType:4
+        },
+        component: () => import('@/view/count/countManage/count_detail.vue')
       },
     ]
   },
@@ -726,7 +935,8 @@ export default [
         name: 'new_vehicle',
         meta: {
           title: '新增车辆',
-          menuType:5
+          menuType:5,
+          notCache:true,
         },
         component: () => import('@/view/vehicle/vehicleManage/new_vehicle.vue')
       },
@@ -815,7 +1025,8 @@ export default [
         name: 'new_customer',
         meta: {
           title: '新增客户',
-          menuType:6
+          menuType:6,
+          notCache:true,
         },
         component: () => import('@/view/customer/customerManage/new_customer.vue')
       },

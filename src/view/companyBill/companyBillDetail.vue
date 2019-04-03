@@ -1,57 +1,40 @@
 <template>
   <div style="padding:0 24px 24px;">
       <Card shadow :title="cardTitle" class="indentCard">
-        <Row>
-            <Col span="12">
-                <Form ref="formValidate" :model="formValidate" :label-width="80" >
+            <Form ref="formValidate" :model="formValidate" :label-width="80" >
 
-                    <FormItem label="客户名称" prop="cusName">
-                        <Input v-model="formValidate.cusName" placeholder="请输入客户名称" style="width:200px"></Input>
-                    </FormItem>
+                <FormItem label="对账时间" prop="accountDate">
+                    <DatePicker type="daterange" :start-date="new Date()" placement="bottom-end" placeholder="请选择对账时间范围" v-model="formValidate.accountDate" style="width: 200px;"></DatePicker>
+                </FormItem>
 
-                    <FormItem label="客户邮箱" prop="mailbox">
-                        <Input v-model="formValidate.mailbox" placeholder="请输入客户邮箱" style="width:200px"></Input>
-                    </FormItem>
+                <FormItem label="总计订单数" prop="indentNum">
+                    <InputNumber :min="0" v-model="formValidate.indentNum"></InputNumber>
+                </FormItem>
 
-                    <FormItem label="对账时间" prop="accountDate">
-                        <DatePicker type="daterange" :start-date="new Date()" placement="bottom-end" placeholder="请选择对账时间范围" v-model="formValidate.accountDate" style="width: 200px;"></DatePicker>
-                    </FormItem>
+                <FormItem label="总计金额（元）" prop="indentMoney" :label-width="100">
+                    <InputNumber :min="0" v-model="formValidate.indentMoney"></InputNumber>
+                </FormItem>
 
-                    <FormItem label="总计订单数" prop="indentNum">
-                        <InputNumber :min="0" v-model="formValidate.indentNum"></InputNumber>
-                    </FormItem>
+                <FormItem label="支付状态" prop="payStatus">
+                    <Select v-model="formValidate.payStatus" placeholder="请选择支付状态" style="width:200px" >
+                        <Option :value="0" >未支付</Option>
+                        <Option :value="1" >已支付</Option>
+                    </Select>
+                </FormItem>
 
-                    <FormItem label="总计金额" prop="indentMoney">
-                        <InputNumber :min="0" v-model="formValidate.indentMoney"></InputNumber>
-                    </FormItem>
+                <FormItem label="确认状态" prop="confirmStatus">
+                    <Select v-model="formValidate.confirmStatus" placeholder="请选择确认状态" style="width:200px" >
+                        <Option :value="0" >未确认</Option>
+                        <Option :value="1" >已确认</Option>
+                    </Select>
+                </FormItem>
 
-                </Form>
-            </Col>
-            <Col span="12">
-                <Form ref="formValidate" :model="formValidate" :label-width="80" >
-
-                    <FormItem label="客户电话" prop="cusPhone">
-                        <Input v-model="formValidate.cusPhone" placeholder="请输入客户电话" style="width:200px"></Input>
-                    </FormItem>
-
-                    <FormItem label="客户地址" prop="cusAddress">
-                        <Input v-model="formValidate.cusAddress" placeholder="请输入客户地址" style="width:200px"></Input>
-                    </FormItem>
-
-                    <FormItem label="支付状态" prop="payStatus">
-                        <Input v-model="formValidate.payStatus" placeholder="请输入支付状态" style="width:200px"></Input>
-                    </FormItem>
-
-                    <FormItem label="确认状态" prop="confirmStatus">
-                        <Input v-model="formValidate.confirmStatus" placeholder="请输入确认状态" style="width:200px"></Input>
-                    </FormItem>
-
+                
                     <FormItem>
-                        <Button type="primary" @click="handleSubmit('formValidate')" v-if="btn_show">确认收款</Button>
+                        <Button type="primary" @click="handleSubmit">确认支付</Button>
                     </FormItem>
-                </Form>
-            </Col>
-        </Row>
+
+            </Form>
       </Card>
       
       <Card shadow title="对账单" class="indentCard">
@@ -88,11 +71,11 @@
 </template>
 
 <script>
-import { Row,Col,Card,Input,Button,DatePicker,Table,AutoComplete,Form,FormItem,Modal,Icon,InputNumber,Upload,Divider } from 'iview'
+import { Row,Col,Card,Input,Button,DatePicker,Table,AutoComplete,Form,FormItem,Modal,Icon,InputNumber,Upload,Divider,Select,Option } from 'iview'
 import { mapActions } from 'vuex'
 import FileSaver from 'file-saver';
 export default {
-  name: 'edit_count',
+  name: 'companyBillDetail',
   components: {
     Row,
     Col,
@@ -108,7 +91,9 @@ export default {
     Icon,
     InputNumber,
     Upload,
-    Divider
+    Divider,
+    Select,
+    Option
   },
   data () {
     return {
@@ -120,12 +105,8 @@ export default {
       order_data:[],
       order_columns: [
             {
-                title: '订单开始时间',
-                key: 'start_time'
-            },
-            {
-                title: '订单结束时间',
-                key: 'end_time'
+                title: '订单开始日期',
+                key: 'start_date'
             },
             {
                 title: '订单起点',
@@ -145,19 +126,6 @@ export default {
                 }
             },
             {
-                title: '订单类型',
-                key: 'order_type',
-                render: (h, params) => {
-                    return h('div', [
-                        h('div',this.getType(params.row.order_type)),
-                    ]);
-                }
-            },
-            {
-                title: '品牌车型',
-                key: 'car_template',
-            },
-            {
                 title: '乘客',
                 key: 'passenger_name'
             },
@@ -172,69 +140,38 @@ export default {
       pageTotal:0,
       pageSize:10,
       pageCurrent:1,
-      permission_arr:''
     }
   },
   methods: {
     ...mapActions([
       'getCustomerReconciliayionLists',
-      'confirmCustomerReconciliation',
+      'payCustomerReconciliation',
     ]),
-    getType(type){
-        if(type === 1){
-            return '日租'
-        }else if(type === 2){
-            return '半日租'
-        }else{
-            return '点对点'
-        }
-    },
     exportData(){
         this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:1000000 }).then((data) => {
             let result = data.data.data.rows[0].settles;
             result.push({
-                start_time:'客户名称: '+ data.data.data.rows[0].name,
-                end_time:'对账日期: '+ data.data.data.rows[0].start_date + ' 至 ' + data.data.data.rows[0].end_date,
-                start_address:'总订单数: '+ data.data.data.rows[0].count_order,
-                end_address:'总计金额: '+ data.data.data.rows[0].count_amount/100,
-                amount:'',
-                order_type:'',
-                car_template:'',
-                passenger_name:'',
+                start_date:'客户名称: '+ data.data.data.rows[0].name,
+                start_address:'对账日期: '+ data.data.data.rows[0].start_date + ' 至 ' + data.data.data.rows[0].end_date,
+                end_address:'总订单数: '+ data.data.data.rows[0].count_order,
+                amount:'总计金额: '+ data.data.data.rows[0].count_amount/100,
+                passenger_name:''
             })
-            let str = '订单开始时间,订单结束时间,订单起点,订单终点,订单价格,订单类型,品牌车型,乘客';
+            let str = '订单开始日期,订单起点,订单终点,订单价格,乘客';
             for (let i=0; i<result.length; i++) {
-                let indent_type = '';
-
-                if(result[i].order_type === 1){
-                    indent_type = '日租'
-                }else if(result[i].order_type === 2){
-                    indent_type = '半日租'
-                }else if(result[i].order_type === 3){
-                    indent_type = '点对点'
-                }else{
-                    indent_type = ''
-                }
-
                 if(i === result.length-1){
                     str += '\n' +
-                    result[i].start_time + ',' +
-                    result[i].end_time + ',' +
+                    result[i].start_date + ',' +
                     result[i].start_address + ',' +
                     result[i].end_address + ',' +
                     result[i].amount + ',' +
-                    indent_type + ',' + 
-                    result[i].car_template + ',' +
                     result[i].passenger_name
                 }else{
                     str += '\n' +
-                    result[i].start_time + ',' +
-                    result[i].end_time + ',' +
+                    result[i].start_date + ',' +
                     result[i].start_address + ',' +
                     result[i].end_address + ',' +
                     result[i].amount/100 + ',' +
-                    indent_type + ',' +
-                    result[i].car_template + ',' +
                     result[i].passenger_name
                 }
             }
@@ -267,70 +204,30 @@ export default {
         })
     },
     handleSubmit (name) {
-        this.$refs[name].validate((valid) => {
-            if (valid) {
 
-                if(this.permission_arr[0] !== '9999'){
-                    for(let i=0; i<this.permission_arr.length; i++){
-                        if(this.permission_arr[i] === '6008'){
-                            per_val = 6008
-                        }
-                    }
-                    if(per_val === 6008){
-                        
-                        this.confirmCustomerReconciliation({ id:this.$route.query.id }).then((data) => {
-                            if(data.data.code === 1){
-                                this.$Message.success('确认成功!');
-                                this.$router.push({path:'createBill'});
-                            }else{
-                                this.$Notice.warning({
-                                    title: '嘀友提醒',
-                                    desc: data.data.msg
-                                });
-                            }
-                            return data;
-                        })
-
+                this.payCustomerReconciliation({ id:this.$route.query.id }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('确认成功!');
+                        this.$router.push({path:'companyBill'});
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
-                            desc: '暂无权限访问！'
+                            desc: data.data.msg
                         });
                     }
-                }else{
-                    this.confirmCustomerReconciliation({ id:this.$route.query.id }).then((data) => {
-                        if(data.data.code === 1){
-                            this.$Message.success('确认成功!');
-                            this.$router.push({path:'createBill'});
-                        }else{
-                            this.$Notice.warning({
-                                title: '嘀友提醒',
-                                desc: data.data.msg
-                            });
-                        }
-                        return data;
-                    })
-                }
+                    return data;
+                })
                 
-            } else {
-                this.$Message.error('确认失败');
-            }
-        })
     },
   },
   mounted () {
-      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
         this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-            this.$set(this.formValidate,'cusName',data.data.data.rows[0].name);
-            this.$set(this.formValidate,'mailbox',data.data.data.rows[0].email);
             this.$set(this.formValidate.accountDate,0,data.data.data.rows[0].start_date);
             this.$set(this.formValidate.accountDate,1,data.data.data.rows[0].end_date);
             this.$set(this.formValidate,'indentNum',data.data.data.rows[0].count_order);
             this.$set(this.formValidate,'indentMoney',data.data.data.rows[0].count_amount/100);
-            this.$set(this.formValidate,'payStatus',data.data.data.rows[0].pay_status === 0 ? '未支付':'已支付');
-            this.$set(this.formValidate,'confirmStatus',data.data.data.rows[0].confirm_status === 0 ? '未确认':'已确认');
-            this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
-            this.$set(this.formValidate,'cusAddress',data.data.data.rows[0].address);
+            this.$set(this.formValidate,'payStatus',data.data.data.rows[0].pay_status);
+            this.$set(this.formValidate,'confirmStatus',data.data.data.rows[0].confirm_status);
             
             if(data.data.data.rows[0].confirm_status === 0){
                 this.btn_show = true;
@@ -351,18 +248,15 @@ export default {
         })
   },
   activated () {
-      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
       this.getCustomerReconciliayionLists({ id:this.$route.query.id,name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-            this.$set(this.formValidate,'cusName',data.data.data.rows[0].name);
-            this.$set(this.formValidate,'mailbox',data.data.data.rows[0].email);
+
             this.$set(this.formValidate.accountDate,0,data.data.data.rows[0].start_date);
             this.$set(this.formValidate.accountDate,1,data.data.data.rows[0].end_date);
             this.$set(this.formValidate,'indentNum',data.data.data.rows[0].count_order);
             this.$set(this.formValidate,'indentMoney',data.data.data.rows[0].count_amount/100);
-            this.$set(this.formValidate,'payStatus',data.data.data.rows[0].pay_status === 0 ? '未支付':'已支付');
-            this.$set(this.formValidate,'confirmStatus',data.data.data.rows[0].confirm_status === 0 ? '未确认':'已确认');
-            this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
-            this.$set(this.formValidate,'cusAddress',data.data.data.rows[0].address);
+            this.$set(this.formValidate,'payStatus',data.data.data.rows[0].pay_status);
+            this.$set(this.formValidate,'confirmStatus',data.data.data.rows[0].confirm_status);
+
 
             if(data.data.data.rows[0].confirm_status === 0){
                 this.btn_show = true;

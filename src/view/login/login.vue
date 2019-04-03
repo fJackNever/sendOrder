@@ -18,13 +18,16 @@
 <script>
 import LoginForm from '_c/login-form'
 import { Card } from 'iview'
-import { mapActions } from 'vuex'
+import { mapActions,mapMutations } from 'vuex'
 export default {
   components: {
     LoginForm,
     Card
   },
   methods: {
+    ...mapMutations([
+      'setTagNavList',
+    ]),
     ...mapActions([
       'handleLogin',
       'handleLogOut'
@@ -32,7 +35,10 @@ export default {
     handleSubmit ({ name, telephone ,password }) {
       this.handleLogin({ name, telephone ,password }).then(res => {
         if(res.data.code==1){
-          this.$router.push({path:'/'});
+          this.setTagNavList([]);
+            window.localStorage.setItem("ueiwrhifjbidfdasnf_company_name",name);
+            window.localStorage.setItem("ueiwrhifjbidfdasnf_telephone",telephone);
+            this.$router.push({path:'/'});
         }else{
           this.$Notice.warning({
               title: '嘀友提醒',
@@ -41,7 +47,7 @@ export default {
         }
       })
     }
-  }
+  },
 }
 </script>
 

@@ -25,6 +25,14 @@ export const getCompanyBaseConfig = () => {
   })
 }
 
+export const getDriverRegisterUrl = () => {
+  return axios.request({
+    url: '/company/company/getDriverRegisterUrl',
+    method: 'post'
+  })
+}
+
+
 //首页工作台
 export const getIndexHost = () => {
   return axios.request({
@@ -245,8 +253,9 @@ export const removeMemberToFleet = ({ fleet_id,driver_id }) => {
 }
 
 
-export const getCanJoinFleetDriverLists = ({ search,offset,limit }) => {
+export const getCanJoinFleetDriverLists = ({ id,search,offset,limit }) => {
   const data = {
+    id,
     search,
     offset,
     limit
@@ -309,6 +318,13 @@ export const getOrderHost = () => {
   })
 }
 
+export const getWorkReminder = () => {
+  return axios.request({
+    url: '/company/index/getWorkReminder',
+    method: 'post'
+  })
+}
+
 export const getOrderLists = ({ id,entity_id,customer_id,city_id,use_car_type_id,status,other_status,start_start_time,start_end_time,create_start_time,create_end_time,driver_name,customer_name,passenger_tel,offset,limit }) => {
   const data = {
     id,
@@ -346,9 +362,11 @@ export const cancelOrder = ({ entity_id }) => {
   })
 }
 
-export const getOrderDriverLists = ({ order_id }) => {
+export const getOrderDriverLists = ({ order_id,key_words,car_color }) => {
   const data = {
-    order_id
+    order_id,
+    key_words,
+    car_color 
   }
   return axios.request({
     url: '/company/driver/getOrderDriverLists',
@@ -629,6 +647,18 @@ export const getDriverReconciliayionLists = ({ id,name,telephone,start_time,end_
   })
 }
 
+export const delDriverReconciliation = ({ id }) => {
+  const data = {
+    id
+  }
+  return axios.request({
+    url: '/company/settlement/delDriverReconciliation',
+    data,
+    method: 'post'
+  })
+}
+
+
 export const createDriverReconciliation = ({ driver_id,start_date,end_date }) => {
   const data = {
     driver_id,
@@ -641,6 +671,19 @@ export const createDriverReconciliation = ({ driver_id,start_date,end_date }) =>
     method: 'post'
   })
 }
+
+export const getDriverId = ({ name,telephone }) => {
+  const data = {
+    name,
+    telephone
+  }
+  return axios.request({
+    url: '/company/driver/getDriverId',
+    data,
+    method: 'post'
+  })
+}
+
 
 //司机钱包
 export const getDriverAmountLists = ({ driver_id,id_name,telephone,offset,limit }) => {
@@ -808,12 +851,36 @@ export const confirmCustomerReconciliation = ({ id }) => {
   })
 }
 
+export const payCustomerReconciliation = ({ id }) => {
+  const data = {
+    id
+  }
+  return axios.request({
+    url: '/company/settlement/payCustomerReconciliation',
+    data,
+    method: 'post'
+  })
+}
+
+
 export const delCustomerReconciliation = ({ id }) => {
   const data = {
     id
   }
   return axios.request({
     url: '/company/settlement/delCustomerReconciliation',
+    data,
+    method: 'post'
+  })
+}
+
+export const getCustomerId = ({ name,telephone }) => {
+  const data = {
+    name,
+    telephone
+  }
+  return axios.request({
+    url: '/company/customer/getCustomerId',
     data,
     method: 'post'
   })
@@ -972,7 +1039,7 @@ export const getCustomerLists = ({ id,status,type,start_time,end_time,name,telep
   })
 }
 
-export const addCustomer = ({ status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }) => {
+export const addCustomer = ({ status,type,name,telephone,address,comment,contact,email,bussiness_path,other_img_path }) => {
   const data = {
     status,
     type,
@@ -980,7 +1047,6 @@ export const addCustomer = ({ status,type,name,telephone,address,comment,amount,
     telephone,
     address,
     comment,
-    amount,
     contact,
     email,
     bussiness_path,
@@ -1040,7 +1106,7 @@ export const delCustomer = ({ id }) => {
 }
 
 //公司信息配置
-export const setCompanyBaseConfig = ({ company_name,telephone,address,address_location,bussiness_path,introduction }) => {
+export const setCompanyBaseConfig = ({ company_name,telephone,address,address_location,bussiness_path,introduction,service_tel }) => {
   const data = {
     company_name,
     telephone,
@@ -1048,6 +1114,7 @@ export const setCompanyBaseConfig = ({ company_name,telephone,address,address_lo
     address_location,
     bussiness_path,
     introduction,
+    service_tel,
   }
   return axios.request({
     url: '/company/company/setCompanyBaseConfig',
@@ -1237,7 +1304,7 @@ export const getTemplateHost = () => {
 }
 
 //订单基础配置
-export const setCompanyOrderBaseConfig = ({ pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time }) => {
+export const setCompanyOrderBaseConfig = ({ pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time,order_amount_show,order_notice }) => {
   const data = {
     pre_create_order_limit_time,
     pre_create_order_time,
@@ -1251,7 +1318,9 @@ export const setCompanyOrderBaseConfig = ({ pre_create_order_limit_time,pre_crea
     driver_mess_order_notice,
     distance_order_start_time,
     is_allow_driver_change_order,
-    can_change_order_time
+    can_change_order_time,
+    order_amount_show,
+    order_notice
   }
   return axios.request({
     url: '/company/company/setCompanyOrderBaseConfig',
@@ -1451,6 +1520,52 @@ export const getAdminUserLists = ({ id,status,search,offset,limit, }) => {
 export const getAdminUserHost = () => {
   return axios.request({
     url: '/company/company/getAdminUserHost',
+    method: 'post'
+  })
+}
+
+
+export const getCustomerInfo = () => {
+  return axios.request({
+    url: '/company/customer/getCustomerInfo',
+    method: 'post'
+  })
+}
+
+export const setCustomer = ({ name,type,telephone,address,contact,email,bussiness_path,other_img_path }) => {
+  const data = {
+    name,
+    type,
+    telephone,
+    address,
+    contact,
+    email,
+    bussiness_path,
+    other_img_path
+  }
+  return axios.request({
+    url: '/company/customer/setCustomer',
+    data,
+    method: 'post'
+  })
+}
+
+
+export const getChangeCustomerPassword = ({ password }) => {
+  const data = {
+    password,
+  }
+  return axios.request({
+    url: '/company/customer/getChangeCustomerPassword',
+    data,
+    method: 'post'
+  })
+}
+
+export const getOrderDescription = () => {
+
+  return axios.request({
+    url: '/company/customer/getOrderDescription',
     method: 'post'
   })
 }

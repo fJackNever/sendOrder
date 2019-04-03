@@ -30,7 +30,7 @@
 
         <Divider />
         
-        <Button type="primary" style="margin-right:30px;" @click="new_edit_troops(1)">创建车队</Button>
+        <Button type="primary" style="margin-right:30px;" @click="new_troops('new')">创建车队</Button>
 
     </Card>
     
@@ -40,10 +40,10 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_troops(2,row.id)">详情</Button>
+                <Button type="primary" style="margin-right: 10px" @click="new_edit_troops(2,row.id)">详情</Button>
                 <!-- <Button type="primary" style="margin-right: 5px" @click="sendMsg(row.id)">发送消息</Button>
                 <Button type="primary" style="margin-right: 5px" @click="sendAward(row.id)">奖励</Button> -->
-                <Button type="primary" style="margin-right: 5px" @click="addTeamMember(row.id)">添加成员</Button>
+                <Button type="primary" style="margin-right: 10px" @click="addTeamMember(row.id)">添加成员</Button>
                 <Button type="error" @click="remove(row.id)">解散</Button>
             </template>
         </Table>
@@ -70,15 +70,31 @@
     >
         <Form ref="formAddValidate" :model="formAddValidate" :label-width="120" >
             <FormItem label="添加车队成员" prop="addMember">
-                <Select v-model="formAddValidate.addMember" style="width:260px">
-                    <Option v-for="(item,index) in memberList" :value="item.id" :key="index">{{ item.id_name }} - {{ item.car_no }} - {{ item.brand_model }}</Option>
-                </Select>
+
+                <AutoComplete
+                v-model="formAddValidate.addMember"
+                @on-search="searchMember"
+                @on-select="selectMember"
+                placeholder="请输入成员名称"
+                style="width:200px" transfer>
+                    <Option v-for="(item,index) in memberList" :value="item.id + ',' + item.id_name" :key="index" >{{ item.id_name }} - {{ item.car_no }} - {{ item.brand_model }}</Option>
+                </AutoComplete>
+
             </FormItem>
             <FormItem>
                 <Button type="primary" @click="handleSubmit('formAddValidate')">添加</Button>
             </FormItem>
         </Form>
     </Modal>
+    <Modal 
+            title="是否解散"
+            v-model="dissolveVisible" 
+            @on-ok="confirmDissolve"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
   </div>
 </template>
 
@@ -130,20 +146,25 @@ export default {
                 key: 'fleet_name'
             },
             {
-                title: '车队排名',
-                key: 'max_member'
+                title: '车队实际人数',
+                key: 'member_count'
             },
             {
-                title: '车队人数',
+                title: '车队最大成员数',
                 key: 'max_member'
             },
             {
                 title: '收入总数',
-                key: 'max_member'
+                key: 'member',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',params.row.member.total_amount),
+                    ]);
+                }
             },
             {
-                title: '注册时间',
-                key: 'max_member'
+                title: '创建时间',
+                key: 'create_time'
             },
             {
                 title: '操作',
@@ -171,7 +192,11 @@ export default {
         memberList:[],
         fleet_id:'',
         inputNameShake:'',
-        permission_arr:''
+        permission_arr:'',
+        inputMemberShake:'',
+        addMemberId:'',
+        dissolveVisible:false,
+        dissolveId:'',
     }
   },
   methods: {
@@ -183,11 +208,20 @@ export default {
     ]),
     findTroops(){
         this.getFleetLists({ id:'',status:'',fleet_no:this.troopsNum,fleet_name:this.troopsName,search:'',offset:0,limit:10 }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     searchName(value){
@@ -207,16 +241,52 @@ export default {
             this.troopsNum = data.data.data.rows[0].fleet_no
         })
     },
-    new_edit_troops(type,index){
-      let per_val = '' ;
-      if(index){
+    searchMember(value){
+      if(this.inputMemberShake) clearTimeout(this.inputMemberShake)
+        this.inputMemberShake = setTimeout(()=>{
+
+            this.getCanJoinFleetDriverLists({ id:'',search:value,offset:0,limit:10000 }).then((data) => {
+                this.memberList = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.memberList,i,data.data.data.rows[i])
+                }
+            })
+
+        },600)
+    },
+    selectMember(val){
+        this.$set(this.formAddValidate,'addMember',val.split(",")[1])
+        this.addMemberId = val.split(",")[0]
+    },
+    new_troops(new_type){
+        let per_val = '' ;
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[4000].length; i++){
-                if(this.permission_arr[4000][i] === '4008'){
-                    per_val = 4008
+                if(this.permission_arr[4000][i] === '4001'){
+                    per_val = 4001
                 }
             }
-            if(per_val === 4008){
+            if(per_val === 4001){
+                this.$router.push({path:'newMotorcade',query:{type:new_type}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'newMotorcade',query:{type:new_type}});
+        }
+    },
+    new_edit_troops(type,index){
+      let per_val = '' ;
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[4000].length; i++){
+                if(this.permission_arr[4000][i] === '4007'){
+                    per_val = 4007
+                }
+            }
+            if(per_val === 4007){
                 this.$router.push({path:'editMotorcade',query:{id:index}});
             }else{
                 this.$Notice.warning({
@@ -227,29 +297,6 @@ export default {
         }else{
             this.$router.push({path:'editMotorcade',query:{id:index}});
         }
-        
-      }else{
-        
-        if(this.permission_arr[0] !== '9999'){
-            for(let i=0; i<this.permission_arr[4000].length; i++){
-                if(this.permission_arr[4000][i] === '4001'){
-                    per_val = 4001
-                }
-            }
-            if(per_val === 4001){
-                this.$router.push({path:'newMotorcade'});
-            }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-            }
-        }else{
-            this.$router.push({path:'newMotorcade'});
-        }
-
-        
-      }
     },
     sendMsg(index){
 
@@ -304,13 +351,7 @@ export default {
             }
             if(per_val === 4004){
                 this.addVisible = true;
-                this.getCanJoinFleetDriverLists({ search:'',offset:0,limit:10000 }).then((data) => {
-                    this.memberList = [];
-                    this.fleet_id = index
-                    for(let i=0; i<data.data.data.rows.length; i++){
-                        this.$set(this.memberList,i,data.data.data.rows[i])
-                    }
-                })
+                this.fleet_id = index
             }else{
                 this.$Notice.warning({
                     title: '嘀友提醒',
@@ -319,23 +360,16 @@ export default {
             }
         }else{
             this.addVisible = true;
-            this.getCanJoinFleetDriverLists({ search:'',offset:0,limit:10000 }).then((data) => {
-                this.memberList = [];
-                this.fleet_id = index
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.memberList,i,data.data.data.rows[i])
-                }
-            })
+            this.fleet_id = index
         }
     },
     handleSubmit(name){
         this.$refs[name].validate((valid) => {
             if (valid) {
                 if(name === 'formAddValidate'){
-                    console.log(this.formAddValidate.addMember)
                     this.addMemberToFleet({ 
                         fleet_id: this.fleet_id,
-                        driver_id:this.formAddValidate.addMember,
+                        driver_id:this.addMemberId,
                     }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('新增成功!');
@@ -346,6 +380,28 @@ export default {
                                 desc: data.data.msg
                             });
                         }
+                        return data;
+                    }).then((data)=>{
+                        
+                        if(data.data.code === 1){
+                            this.getFleetLists({ id:'',status:'',fleet_no:'',fleet_name:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
+                                if(data.data.code === 1){
+                                    this.order_data = [];
+                                    for(let i=0; i<data.data.data.rows.length; i++){
+                                        this.$set(this.order_data,i,data.data.data.rows[i])
+                                    }
+                                    this.pageTotal = data.data.data.total
+                                }else{
+                                    this.order_data = [];
+                                    this.pageTotal = 0;
+                                    this.$Notice.warning({
+                                        title: '嘀友提醒',
+                                        desc: data.data.msg
+                                    });
+                                }
+                            })
+                        }
+                        
                     })
                 }else{
                     
@@ -356,7 +412,10 @@ export default {
         })
     },
     remove(index){
-    
+        this.dissolveVisible = true;
+        this.dissolveId = index
+    },
+    confirmDissolve(){
         let per_val = '' 
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[4000].length; i++){
@@ -366,16 +425,17 @@ export default {
             }
             if(per_val === 4005){
                 
-                this.delFleet({ id:index }).then((data) => {
+                this.delFleet({ id:this.dissolveId }).then((data) => {
                     if(data.data.code === 1){
                         for(let i=0; i<this.order_data.length;){
-                            if(index === this.order_data[i].id){
+                            if(this.dissolveId === this.order_data[i].id){
                                 this.order_data.splice(i,1)
                             }else{
                                 i++
                             }
                         }
-                        this.$Message.success('删除成功!');
+                        this.$Message.success('解散成功!');
+                        this.dissolveVisible = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -417,16 +477,17 @@ export default {
             }
         }else{
             
-            this.delFleet({ id:index }).then((data) => {
+            this.delFleet({ id:this.dissolveId }).then((data) => {
                 if(data.data.code === 1){
                     for(let i=0; i<this.order_data.length;){
-                        if(index === this.order_data[i].id){
+                        if(this.dissolveId === this.order_data[i].id){
                             this.order_data.splice(i,1)
                         }else{
                             i++
                         }
                     }
-                    this.$Message.success('删除成功!');
+                    this.$Message.success('解散成功!');
+                    this.dissolveVisible = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -461,7 +522,6 @@ export default {
             })
 
         }
-
     },
     changePage(page){
         this.pageCurrent = page;
@@ -475,30 +535,59 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getFleetLists({ id:'',status:'',fleet_no:'',fleet_name:'',search:'',offset:0,limit:size }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
   },
   mounted () {
     this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getFleetLists({ id:'',status:'',fleet_no:'',fleet_name:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-      for(let i=0; i<data.data.data.rows.length; i++){
-        this.$set(this.order_data,i,data.data.data.rows[i])
-      }
-      this.pageTotal = data.data.data.total
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
     })
   },
   activated () {
     this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getFleetLists({ id:'',status:'',fleet_no:'',fleet_name:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-      for(let i=0; i<data.data.data.rows.length; i++){
-        this.$set(this.order_data,i,data.data.data.rows[i])
-      }
-      this.pageTotal = data.data.data.total
+      if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
     })
   }
 }
@@ -541,4 +630,23 @@ export default {
         cursor: pointer;
         margin: 0 2px;
     }
+
+.reassignModal{
+    .ivu-modal{
+        width: 300px !important;
+    }
+    .ivu-modal-header{
+        border-bottom:none;
+        .ivu-modal-header-inner{
+            text-align: center;
+        }
+    }
+    .ivu-modal-body{
+        display: none;
+    }
+    .ivu-modal-footer{
+        border-top:none;
+        text-align: center;
+    }
+}
 </style>

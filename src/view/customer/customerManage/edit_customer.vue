@@ -12,7 +12,7 @@
                         </Select>
                     </FormItem>
 
-                    <FormItem label="审核内容" prop="auth_comment" :label-width="100" style="width:400px;" v-if="add_edit === 3">
+                    <FormItem label="审核内容" prop="auth_comment" style="width:400px;" v-if="add_edit === 3">
                         <Input v-model="formValidate.auth_comment" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入审核内容" ></Input>
                     </FormItem>
 
@@ -37,10 +37,6 @@
 
                     <FormItem label="客户备注信息" prop="desc" :label-width="100" style="width:400px;">
                         <Input v-model="formValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入客户备注信息" :disabled="formDis"></Input>
-                    </FormItem>
-
-                    <FormItem label="客户余额(元)" prop="balance">
-                        <InputNumber :min="0" v-model="formValidate.balance" :disabled="formDis"></InputNumber>
                     </FormItem>
 
                 </Form>
@@ -150,13 +146,8 @@ export default {
       statusDis:false,
       formDis:false,
       formValidate: {
-          balance:0,
       },
-      ruleValidate: {
-          contactPer:[
-              { required: true, message: '请填写联系人', trigger: 'blur' }
-          ],
-      },
+      ruleValidate: {},
       visible:false,
       operationList:[],
       otherList:[],
@@ -232,11 +223,25 @@ export default {
         return check;
     },
     handleSubmit (name) {
-        let other_img_arr = [];
-        other_img_arr.push(this.otherList[0].url || '')
+        
         this.$refs[name].validate((valid) => {
             if (valid) {
                 if(this.add_edit === 2){
+
+                    let other_img_arr = [],other_img_url;
+                    if(this.otherList && this.otherList.length > 0){
+                        other_img_arr.push(this.otherList[0].ur)
+                        other_img_url = JSON.stringify(other_img_arr)
+                    }else{
+                        other_img_url = ''
+                    }
+
+                    let operationPic;
+                    if(this.operationList && this.operationList.length>0){
+                        operationPic = this.operationList[0].url
+                    }else{
+                        operationPic = ''
+                    }
                     this.editCustomer({ 
                         id:this.$route.query.id,
                         status:this.formValidate.status,
@@ -245,11 +250,10 @@ export default {
                         telephone:this.formValidate.cusPhone,
                         address:this.formValidate.address,
                         comment:this.formValidate.desc,
-                        amount:this.formValidate.balance,
                         contact:this.formValidate.contactPer,
                         email:this.formValidate.mailBox,
-                        bussiness_path:this.operationList[0].url || '',
-                        other_img_path:JSON.stringify(other_img_arr),
+                        bussiness_path:operationPic,
+                        other_img_path:other_img_url,
                     }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('修改成功!');
@@ -298,7 +302,6 @@ export default {
             this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
             this.$set(this.formValidate,'address',data.data.data.rows[0].address);
             this.$set(this.formValidate,'desc',data.data.data.rows[0].comment);
-            this.$set(this.formValidate,'balance',data.data.data.rows[0].amount);
             this.$set(this.formValidate,'contactPer',data.data.data.rows[0].contact);
             this.$set(this.formValidate,'mailBox',data.data.data.rows[0].email);
             if(data.data.data.rows[0].bussiness_path){
@@ -322,7 +325,6 @@ export default {
             this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
             this.$set(this.formValidate,'address',data.data.data.rows[0].address);
             this.$set(this.formValidate,'desc',data.data.data.rows[0].comment);
-            this.$set(this.formValidate,'balance',data.data.data.rows[0].amount);
             this.$set(this.formValidate,'contactPer',data.data.data.rows[0].contact);
             this.$set(this.formValidate,'mailBox',data.data.data.rows[0].email);
             if(data.data.data.rows[0].bussiness_path){
@@ -348,7 +350,6 @@ export default {
             this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
             this.$set(this.formValidate,'address',data.data.data.rows[0].address);
             this.$set(this.formValidate,'desc',data.data.data.rows[0].comment);
-            this.$set(this.formValidate,'balance',data.data.data.rows[0].amount);
             this.$set(this.formValidate,'contactPer',data.data.data.rows[0].contact);
             this.$set(this.formValidate,'mailBox',data.data.data.rows[0].email);
             if(data.data.data.rows[0].bussiness_path){
@@ -372,7 +373,6 @@ export default {
             this.$set(this.formValidate,'cusPhone',data.data.data.rows[0].telephone);
             this.$set(this.formValidate,'address',data.data.data.rows[0].address);
             this.$set(this.formValidate,'desc',data.data.data.rows[0].comment);
-            this.$set(this.formValidate,'balance',data.data.data.rows[0].amount);
             this.$set(this.formValidate,'contactPer',data.data.data.rows[0].contact);
             this.$set(this.formValidate,'mailBox',data.data.data.rows[0].email);
             if(data.data.data.rows[0].bussiness_path){

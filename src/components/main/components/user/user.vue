@@ -14,7 +14,7 @@
 
 <script>
 import './user.less'
-import { mapActions } from 'vuex'
+import { mapActions,mapMutations } from 'vuex'
 import { Dropdown,Icon,DropdownMenu,DropdownItem } from 'iview'
 export default {
   name: 'User',

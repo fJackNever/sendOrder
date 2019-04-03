@@ -28,7 +28,7 @@
         </AutoComplete>
 
         <Button type="success" style="margin-left:30px;" @click="findVehicle">查询</Button>
-        <Button type="success" style="margin-left:30px;" @click="new_edit_vehicle(1)">添加车辆</Button>
+        <Button type="success" style="margin-left:30px;" @click="new_vehicle('new')">添加车辆</Button>
         <!-- <Button type="success" style="margin-left:30px;">导入车辆</Button> -->
         <Button type="success" style="margin-left:30px;" @click="exportData">导出车辆</Button>
 
@@ -41,18 +41,27 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="checkVehicle(row.id,'check')">查看与审核</Button>
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_vehicle(2,row.id)">编辑</Button>
+                <Button type="primary" style="margin-right: 10px" @click="checkVehicle(row.id,'check')">查看与审核</Button>
+                <Button type="primary" style="margin-right: 10px" @click="new_edit_vehicle(2,row.id)">编辑</Button>
                 <Button type="error" @click="deleteRecord(row.id)">删除</Button>
             </template>
         </Table>
         <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
       </Card>
+      <Modal 
+            title="是否删除"
+            v-model="deleteVisible" 
+            @on-ok="confirmDelete"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
   </div>
 </template>
 
 <script>
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page,Modal } from 'iview'
 import { mapActions } from 'vuex'
 import FileSaver from 'file-saver';
 export default {
@@ -68,6 +77,7 @@ export default {
     Table,
     AutoComplete,
     Page,
+    Modal
   },
   data () {
     return {
@@ -91,7 +101,8 @@ export default {
             },
             {
                 title: '所有人',
-                key: 'owner'
+                key: 'owner',
+                width:100,
             },
             {
                 title: '品牌车型',
@@ -135,7 +146,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 280,
+                width: 310,
                 align: 'center'
             }
         ],
@@ -143,7 +154,9 @@ export default {
         pageTotal:0,
         pageSize:10,
         pageCurrent:1,
-        permission_arr:''
+        permission_arr:'',
+        deleteVisible:false,
+        deleteId:'',
     }
   },
   methods: {
@@ -154,7 +167,7 @@ export default {
     ]),
 
     exportData(){
-
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[3000].length; i++){
                 if(this.permission_arr[3000][i] === '3007'){
@@ -255,19 +268,37 @@ export default {
         this.licenseNum = '';
         if(val === -1){
             this.getCarLists({ id:'',status:'',car_template_id:'',start_time:this.date_val[0],end_time:this.date_val[1],car_no:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-                this.order_data = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else{
             this.getCarLists({ id:'',status:'',car_template_id:val,start_time:this.date_val[0],end_time:this.date_val[1],car_no:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-                this.order_data = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
@@ -276,19 +307,37 @@ export default {
         this.licenseNum = '';
         if(val === 3){
             this.getCarLists({ id:'',status:'',car_template_id:'',start_time:this.date_val[0],end_time:this.date_val[1],car_no:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-                this.order_data = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else{
             this.getCarLists({ id:'',status:val,car_template_id:'',start_time:this.date_val[0],end_time:this.date_val[1],car_no:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-                this.order_data = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
@@ -299,11 +348,20 @@ export default {
         this.$set(this.date_val,0,date[0])
         this.$set(this.date_val,1,date[1])
         this.getCarLists({ id:'',status:'',car_template_id:'',start_time:date[0],end_time:date[1],car_no:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     searchLicenseNum(value){
@@ -327,14 +385,24 @@ export default {
         this.statusSelected = 3;
         this.modelSelected = -1;
         this.getCarLists({ id:'',status:'',car_template_id:'',start_time:this.date_val[0],end_time:this.date_val[1],car_no:this.licenseNum,search:'',offset:0,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
         })
     },
     checkVehicle(index,type){
-
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[3000].length; i++){
                 if(this.permission_arr[3000][i] === '3004'){
@@ -355,8 +423,29 @@ export default {
 
       
     },
+    new_vehicle(new_type){
+        let per_val = '';
+         if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[3000].length; i++){
+                if(this.permission_arr[3000][i] === '3001'){
+                    per_val = 3001
+                }
+            }
+            if(per_val === 3001){
+                this.$router.push({path:'new_vehicle',query:{type:new_type}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'new_vehicle',query:{type:new_type}});
+        }
+    },
     new_edit_vehicle(type,index){
-      if(index){
+
+        let per_val = '';
         
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[3000].length; i++){
@@ -376,32 +465,14 @@ export default {
             this.$router.push({path:'edit_vehicle',query:{id:index}});
         }
 
-        
-      }else{
-
-          if(this.permission_arr[0] !== '9999'){
-            for(let i=0; i<this.permission_arr[3000].length; i++){
-                if(this.permission_arr[3000][i] === '3001'){
-                    per_val = 3001
-                }
-            }
-            if(per_val === 3001){
-                this.$router.push({path:'new_vehicle'});
-            }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-            }
-        }else{
-            this.$router.push({path:'new_vehicle'});
-        }
-
-        
-      }
     },
     deleteRecord(index){
+        this.deleteVisible = true;
+        this.deleteId = index;
 
+    },
+    confirmDelete(){
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[3000].length; i++){
                 if(this.permission_arr[3000][i] === '3005'){
@@ -410,16 +481,17 @@ export default {
             }
             if(per_val === 3005){
                 
-                this.delCar({ id:index }).then((data) => {
+                this.delCar({ id:this.deleteId }).then((data) => {
                     if(data.data.code === 1){
                         for(let i=0; i<this.order_data.length;){
-                            if(index === this.order_data[i].id){
+                            if(this.deleteId === this.order_data[i].id){
                                 this.order_data.splice(i,1)
                             }else{
                                 i++
                             }
                         }
                         this.$Message.success('删除成功!');
+                        this.deleteVisible = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -460,16 +532,17 @@ export default {
                 });
             }
         }else{
-            this.delCar({ id:index }).then((data) => {
+            this.delCar({ id:this.deleteId }).then((data) => {
                 if(data.data.code === 1){
                     for(let i=0; i<this.order_data.length;){
-                        if(index === this.order_data[i].id){
+                        if(this.deleteId === this.order_data[i].id){
                             this.order_data.splice(i,1)
                         }else{
                             i++
                         }
                     }
                     this.$Message.success('删除成功!');
+                    this.deleteVisible = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -503,8 +576,6 @@ export default {
                 }
             })
         }
-
-        
     },
     changePage(page){
         this.pageCurrent = page;
@@ -518,43 +589,84 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getCarLists({ id:'',status:'',car_template_id:'',start_time:this.date_val[0],end_time:this.date_val[1],car_no:'',search:'',offset:0,limit:size }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
   },
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCarTemplateLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.modelOptions,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.modelOptions = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.modelOptions,i,data.data.data.rows[i])
+            }
+        }else{
+            this.modelOptions = [];
         }
+
     })
 
     this.getCarLists({ id:'',status:'',car_template_id:'',start_time:'',end_time:'',car_no:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   },
   activated () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCarTemplateLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.modelOptions,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.modelOptions = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.modelOptions,i,data.data.data.rows[i])
+            }
+        }else{
+            this.modelOptions = [];
         }
+
     })
 
     this.getCarLists({ id:'',status:'',car_template_id:'',start_time:'',end_time:'',car_no:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   }
@@ -562,5 +674,22 @@ export default {
 </script>
 
 <style lang="less">
-
+.reassignModal{
+    .ivu-modal{
+        width: 300px !important;
+    }
+    .ivu-modal-header{
+        border-bottom:none;
+        .ivu-modal-header-inner{
+            text-align: center;
+        }
+    }
+    .ivu-modal-body{
+        display: none;
+    }
+    .ivu-modal-footer{
+        border-top:none;
+        text-align: center;
+    }
+}
 </style>

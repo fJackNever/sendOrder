@@ -3,9 +3,9 @@
     <topHost :itemCol="countHostData" @transferdata="updateTable"></topHost>
     <Card shadow style="margin-top:10px;">
         <span style="font-size:14px;">时间筛选</span>
-        <DatePicker type="daterange" @on-change="changeDate" :value="date_val" :start-date="new Date()" placement="bottom-end" placeholder="请选择时间范围" style="width: 200px;margin-left:20px;"></DatePicker>
+        <DatePicker type="daterange" transfer @on-change="changeDate" :value="date_val" :start-date="new Date()" placement="bottom-end" placeholder="请选择时间范围" style="width: 200px;margin-left:20px;"></DatePicker>
 
-        <span style="font-size:14px;padding-right:10px;">客户名称</span>
+        <span style="font-size:14px;padding-right:10px;padding-left:10px;">客户名称</span>
         <AutoComplete
         v-model="cusName"
         @on-search="searchCusName"
@@ -15,11 +15,14 @@
           <Option v-for="(item,index) in cusNameGather" :value="item.id" :key="index" >{{ item.name }}</Option>
         </AutoComplete>
 
-        <span style="font-size:14px;padding-right:10px;padding-left:20px;">客户手机号</span>
+        <span style="font-size:14px;padding-right:10px;padding-left:10px;">客户手机号</span>
         <Input v-model="phone" placeholder="请输入联系人手机号" style="width:200px;"></Input>
 
         <Button type="success" style="margin-left:30px;" @click="find_bill()">查询</Button>
-        <Button type="success" style="margin-left:30px;" @click="create_bill()">生成对账单</Button>
+
+        <Divider />
+
+        <Button type="success" @click="create_bill()">生成对账单</Button>
 
         <Divider />
     </Card>
@@ -29,21 +32,45 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="edit_bill(row.id)">详情</Button>
-                <Button type="error" style="margin-right: 5px" @click="sure_gathering(row.id)" v-if="row.confirm_status === 0">确认收款</Button>
-                <Button type="error" style="margin-right: 5px" v-if="row.confirm_status === 1"  disabled >已确认</Button>
-                <Button type="error" @click="deleteBill(row.id)">删除</Button>
+                <Button type="primary" style="margin-right: 10px" @click="edit_bill(row.id)">详情</Button>
+                <Button type="error" style="margin-right: 10px" @click="sure_gathering(row.id)" v-if="row.confirm_status === 0">确认收款</Button>
+                <Button type="error" style="margin-right: 10px" v-if="row.confirm_status === 1"  disabled >已确认</Button>
+                <!-- <Button type="error" @click="deleteBill(row.id)">删除</Button> -->
             </template>
         </Table>
         <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
     </Card>
+    <Modal title="生成对账单" v-model="countVisible" :footer-hide="true">
+        <Form ref="formValidate" :model="formValidate" :label-width="120" >
+            <FormItem label="指定时间" prop="date_val" :label-width="120">
+                <DatePicker type="daterange" @on-change="changeModalDate" :value="formValidate.date_val" transfer :start-date="new Date()" placement="bottom-end" placeholder="请选择时间范围" style="width: 200px;"></DatePicker>
+            </FormItem>
+            <FormItem label="客户名称" prop="cusName" :label-width="120">
+                <AutoComplete
+                v-model="formValidate.cusName"
+                @on-search="searchModalName"
+                @on-select="selectModalName"
+                placeholder="请输入客户名称"
+                style="width:200px;" transfer>
+                    <Option v-for="(item,index) in cusNameModalGather" :value="item.id" :key="index" >{{ item.name }}</Option>
+                </AutoComplete>
+            </FormItem>
+            <FormItem label="客户手机号" prop="phone" :label-width="120">
+                <Input v-model="formValidate.phone" placeholder="请输入客户手机号" style="width:200px"></Input>
+            </FormItem>
+            <FormItem>
+                <Button type="primary" @click="handleSubmit('formValidate')">确认</Button>
+            </FormItem>
+        </Form>
+    </Modal>
   </div>
 </template>
 
 <script>
 import topHost from '_c/top-host'
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page,Modal,Form,FormItem } from 'iview'
 import { mapActions } from 'vuex'
+import moment from 'moment' 
 export default {
   name: 'createBill',
   components: {
@@ -57,7 +84,10 @@ export default {
     Table,
     AutoComplete,
     topHost,
-    Page
+    Page,
+    Modal,
+    Form,
+    FormItem
   },
   data () {
     return {
@@ -69,7 +99,8 @@ export default {
       order_columns: [
             {
                 title: '客户姓名',
-                key: 'name'
+                key: 'name',
+                width:100,
             },
             {
                 title: '客户电话',
@@ -118,14 +149,22 @@ export default {
             }
         ],
         order_data: [],
-        permission_arr:'',
         pageTotal:0,
         pageSize:10,
         pageCurrent:1,
         inpuCusShake:'',
         date_val:['',''],
         cus_id:'',
-        permission_arr:''
+        permission_arr:'',
+        countVisible:false,
+        cusNameModalGather:[],
+        formValidate:{
+            date_val:['',''],
+            cusName:'',
+            phone:'',
+        },
+        inpuCusShake:'',
+        inputNameModalShake:''
     }
   },
   methods: {
@@ -136,34 +175,57 @@ export default {
       'getCustomerReconciliayionLists',
       'confirmCustomerReconciliation',
       'delCustomerReconciliation',
+      'getCustomerId',
     ]),
     updateTable(index){
         if(index === 0){
             this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:0,confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 1){
             this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:1,confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
     changeDate(val){
-        this.$set(this.date_val,0,val[0])
-        this.$set(this.date_val,1,val[1])
+        this.$set(this.date_val,0,moment(val[0]).format('YYYY-MM-DD'))
+        this.$set(this.date_val,1,moment(val[1]).format('YYYY-MM-DD'))
+    },
+    changeModalDate(val){
+        this.$set(this.formValidate.date_val,0,moment(val[0]).format('YYYY-MM-DD'))
+        this.$set(this.formValidate.date_val,1,moment(val[1]).format('YYYY-MM-DD'))
     },
     searchCusName(value){
       if(this.inpuCusShake) clearTimeout(this.inputCusShake)
         this.inpuCusShake = setTimeout(()=>{
-            this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:value,telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
                 this.cusNameGather = []
                 for(let i=0; i<data.data.data.rows.length; i++){
                     this.$set(this.cusNameGather,i,data.data.data.rows[i])
@@ -180,15 +242,44 @@ export default {
     },
     find_bill(){
         this.getCustomerReconciliayionLists({ id:'',name:this.cusName,telephone:this.phone,pay_status:'',confirm_status:'',start_time:this.date_val[0],end_time:this.date_val[1],offset:0,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     create_bill(){
-
+        this.countVisible = true;  
+    },
+    searchModalName(value){
+        if(this.inputNameModalShake) clearTimeout(this.inputNameModalShake)
+        this.inputNameModalShake = setTimeout(()=>{
+            this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:value,telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+                this.cusNameModalGather = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.cusNameModalGather,i,data.data.data.rows[i])
+                }
+            })
+        },600)
+    },
+    selectModalName(val){
+        this.getCustomerLists({ id:val,status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
+            this.$set(this.formValidate,'cusName',data.data.data.rows[0].name)
+            this.$set(this.formValidate,'phone',data.data.data.rows[0].telephone)
+        })
+    },
+    handleSubmit(name){
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[6000].length; i++){
                 if(this.permission_arr[6000][i] === '6007'){
@@ -196,24 +287,68 @@ export default {
                 }
             }
             if(per_val === 6007){
-                
-                this.createCustomerReconciliation({ customer_id:this.cus_id,start_date:this.date_val[0],end_date:this.date_val[1] }).then((data) => {
-                    return data;
-                }).then(data=>{
-                    if(data.data.code === 1){
-                        this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                            for(let i=0; i<data.data.data.rows.length; i++){
-                                this.$set(this.order_data,i,data.data.data.rows[i])
-                            }
-                            this.pageTotal = data.data.data.total
-                        })
+                if(this.formValidate.phone !== ''){
+                    
+                    let momGDDate,momEDDate;
+                    if(this.formValidate.date_val[0]){
+                        momGDDate = moment(this.formValidate.date_val[0]).format('YYYY-MM-DD')
                     }else{
-                        this.$Notice.warning({
-                            title: '嘀友提醒',
-                            desc: data.data.msg
-                        });
+                        momGDDate = ''
                     }
-                })
+
+                    if(this.formValidate.date_val[1]){
+                        momEDDate = moment(this.formValidate.date_val[1]).format('YYYY-MM-DD')
+                    }else{
+                        momEDDate = ''
+                    }
+
+                    this.getCustomerId({ name:this.formValidate.cusName,telephone:this.formValidate.phone }).then((data) => {
+                        return data;
+                    }).then(data=>{
+                        if(data.data.code === 1){
+                            this.createCustomerReconciliation({ customer_id:data.data.data.id,start_date:momGDDate,end_date:momEDDate }).then((data) => {
+                                return data;
+                            }).then(data=>{
+                                if(data.data.code === 1){
+                                    this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
+                                        if(data.data.code === 1){
+                                            this.order_data = [];
+                                            for(let i=0; i<data.data.data.rows.length; i++){
+                                                this.$set(this.order_data,i,data.data.data.rows[i])
+                                            }
+                                            this.$Message.success('生成成功!');
+                                            this.pageTotal = data.data.data.total;
+                                            this.countVisible = false;
+                                        }else{
+                                            this.order_data = [];
+                                            this.pageTotal = 0;
+                                            this.$Notice.warning({
+                                                title: '嘀友提醒',
+                                                desc: data.data.msg
+                                            });
+                                        }
+                                    })
+                                }else{
+                                    this.$Notice.warning({
+                                        title: '嘀友提醒',
+                                        desc: data.data.msg
+                                    });
+                                }
+                            })
+                        }else{  
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: '司机姓名和电话号码有误'
+                            });
+                        }
+                    })
+                    
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '请填写手机号'
+                    });
+                }
 
             }else{
                 this.$Notice.warning({
@@ -222,32 +357,75 @@ export default {
                 });
             }
         }else{
-            this.createCustomerReconciliation({ customer_id:this.cus_id,start_date:this.date_val[0],end_date:this.date_val[1] }).then((data) => {
-                return data;
-            }).then(data=>{
-                if(data.data.code === 1){
-                    this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                        for(let i=0; i<data.data.data.rows.length; i++){
-                            this.$set(this.order_data,i,data.data.data.rows[i])
-                        }
-                        this.pageTotal = data.data.data.total
-                    })
-                }else{
-                    this.$Notice.warning({
-                        title: '嘀友提醒',
-                        desc: data.data.msg
-                    });
-                }
-            })
-        }
+            if(this.formValidate.phone !== ''){
 
-        
+                let momGDDate,momEDDate;
+                if(this.formValidate.date_val[0]){
+                    momGDDate = moment(this.formValidate.date_val[0]).format('YYYY-MM-DD')
+                }else{
+                    momGDDate = ''
+                }
+
+                if(this.formValidate.date_val[1]){
+                    momEDDate = moment(this.formValidate.date_val[1]).format('YYYY-MM-DD')
+                }else{
+                    momEDDate = ''
+                }
+
+                this.getCustomerId({ name:this.formValidate.cusName,telephone:this.formValidate.phone }).then((data) => {
+                    return data;
+                }).then(data=>{
+                    if(data.data.code === 1){
+                        this.createCustomerReconciliation({ customer_id:data.data.data.id,start_date:momGDDate,end_date:momEDDate }).then((data) => {
+                            return data;
+                        }).then(data=>{
+                            if(data.data.code === 1){
+                                this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
+                                    if(data.data.code === 1){
+                                        this.order_data = [];
+                                        for(let i=0; i<data.data.data.rows.length; i++){
+                                            this.$set(this.order_data,i,data.data.data.rows[i])
+                                        }
+                                        this.$Message.success('生成成功!');
+                                        this.pageTotal = data.data.data.total;
+                                        this.countVisible = false;
+                                    }else{
+                                        this.order_data = [];
+                                        this.pageTotal = 0;
+                                        this.$Notice.warning({
+                                            title: '嘀友提醒',
+                                            desc: data.data.msg
+                                        });
+                                    }
+                                })
+                            }else{
+                                this.$Notice.warning({
+                                    title: '嘀友提醒',
+                                    desc: data.data.msg
+                                });
+                            }
+                        })
+                    }else{  
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: '司机姓名和电话号码有误'
+                        });
+                    }
+                })
+                
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '请填写手机号'
+                });
+            }
+        }
     },
     edit_bill(index){
         this.$router.push({path:'edit_count',query:{id:index}});
     },
     sure_gathering(index){
-
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[6000].length; i++){
                 if(this.permission_arr[6000][i] === '6008'){
@@ -436,30 +614,62 @@ export default {
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCutsomerReconciliationHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'未支付金额',colSpan:3,value:data.data.data.unpay_amount/100,em:true})
-        this.$set(this.countHostData,1,{ title:'已支付金额',colSpan:3,value:data.data.data.pay_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'未支付金额',colSpan:3,value:data.data.data.unpay_amount/100,em:true})
+            this.$set(this.countHostData,1,{ title:'已支付金额',colSpan:3,value:data.data.data.pay_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'未支付金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'已支付金额',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   },
   activated () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCutsomerReconciliationHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'未支付金额',colSpan:3,value:data.data.data.unpay_amount/100,em:true})
-        this.$set(this.countHostData,1,{ title:'已支付金额',colSpan:3,value:data.data.data.pay_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'未支付金额',colSpan:3,value:data.data.data.unpay_amount/100,em:true})
+            this.$set(this.countHostData,1,{ title:'已支付金额',colSpan:3,value:data.data.data.pay_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'未支付金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'已支付金额',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getCustomerReconciliayionLists({ id:'',name:'',telephone:'',pay_status:'',confirm_status:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   }

@@ -31,7 +31,10 @@
         </AutoComplete>
 
         <Button type="success" style="margin-left:30px;" @click="checkCus">查询</Button>
-        <Button type="success" style="margin-left:30px;" @click="new_edit_cus(1)">添加客户</Button>
+
+        <Divider />
+
+        <Button type="success" @click="new_cus('new')">添加客户</Button>
         <!-- <Button type="success" style="margin-left:30px;">推广二维码</Button> -->
 
         <Divider />
@@ -43,18 +46,27 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="checkVehicle(row.id,'check')">查看与审核</Button>
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_cus(2,row.id)">编辑</Button>
+                <Button type="primary" style="margin-right: 10px" @click="checkVehicle(row.id,'check')">查看与审核</Button>
+                <Button type="primary" style="margin-right: 10px" @click="new_edit_cus(2,row.id)">编辑</Button>
                 <Button type="error" @click="deleteRecord(row.id)">删除</Button>
             </template>
         </Table>
         <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
       </Card>
+      <Modal 
+            title="是否删除"
+            v-model="deleteVisible" 
+            @on-ok="confirmDelete"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
   </div>
 </template>
 
 <script>
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page,Modal } from 'iview'
 import { mapActions } from 'vuex'
 export default {
   name: 'customerList',
@@ -69,6 +81,7 @@ export default {
     Table,
     AutoComplete,
     Page,
+    Modal
   },
   data () {
     return {
@@ -81,7 +94,8 @@ export default {
       order_columns: [
             {
                 title: '客户名称',
-                key: 'name'
+                key: 'name',
+                width:100,
             },
             {
                 title: '客户手机号',
@@ -111,7 +125,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 260,
+                width: 290,
                 align: 'center'
             }
         ],
@@ -121,7 +135,9 @@ export default {
         pageCurrent:1,
         inpuCusShake:'',
         inpuConShake:'',
-        permission_arr:''
+        permission_arr:'',
+        deleteVisible:false,
+        deleteId:'',
     }
   },
   methods: {
@@ -145,11 +161,20 @@ export default {
       this.$set(this.date_val,0,date[0])
       this.$set(this.date_val,1,date[1])
       this.getCustomerLists({ id:'',status:'',type:'',start_time:date[0],end_time:date[1],name:'',telephone:'',contact:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-          this.order_data = []
-          for(let i=0; i<data.data.data.rows.length; i++){
-              this.$set(this.order_data,i,data.data.data.rows[i])
-          }
-          this.pageTotal = data.data.data.total
+          if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
+            }
       })
     },
     searchCusName(value){
@@ -187,14 +212,24 @@ export default {
     },
     checkCus(){
       this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:this.cusName,telephone:this.phone,contact:this.contactPer,search:'',offset:0,limit:10 }).then((data) => {
-          for(let i=0; i<data.data.data.rows.length; i++){
-              this.$set(this.order_data,i,data.data.data.rows[i])
-          }
-          this.pageTotal = data.data.data.total
+          if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
+            }
       })
     },
     checkVehicle(index,type){
-
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[1000].length; i++){
                 if(this.permission_arr[1000][i] === '1004'){
@@ -215,9 +250,28 @@ export default {
 
       
     },
+    new_cus(new_type){
+        let per_val = ''
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[1000].length; i++){
+                if(this.permission_arr[1000][i] === '1001'){
+                    per_val = 1001
+                }
+            }
+            if(per_val === 1001){
+                this.$router.push({path:'new_customer',query:{type:new_type}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'new_customer',query:{type:new_type}});
+        }
+    },
     new_edit_cus(type,index){
-      if(index){
-
+            let per_val = ''
           if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[1000].length; i++){
                 if(this.permission_arr[1000][i] === '1003'){
@@ -236,32 +290,14 @@ export default {
             this.$router.push({path:'edit_customer',query:{id:index}});
         }
 
-        
-      }else{
-
-          if(this.permission_arr[0] !== '9999'){
-            for(let i=0; i<this.permission_arr[1000].length; i++){
-                if(this.permission_arr[1000][i] === '1001'){
-                    per_val = 1001
-                }
-            }
-            if(per_val === 1001){
-                this.$router.push({path:'new_customer'});
-            }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-            }
-        }else{
-            this.$router.push({path:'new_customer'});
-        }
-
-        
-      }
     },
     deleteRecord(index){
+        this.deleteVisible = true;
+        this.deleteId = index
 
+    },
+    confirmDelete(){
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[1000].length; i++){
                 if(this.permission_arr[1000][i] === '1005'){
@@ -270,16 +306,17 @@ export default {
             }
             if(per_val === 1005){
                 
-                this.delCustomer({ id:index }).then((data) => {
+                this.delCustomer({ id:this.deleteId }).then((data) => {
                     if(data.data.code === 1){
                         for(let i=0; i<this.order_data.length;){
-                            if(index === this.order_data[i].id){
+                            if(this.deleteId === this.order_data[i].id){
                                 this.order_data.splice(i,1)
                             }else{
                                 i++
                             }
                         }
                         this.$Message.success('删除成功!');
+                        this.deleteVisible = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -321,16 +358,17 @@ export default {
             }
         }else{
             
-            this.delCustomer({ id:index }).then((data) => {
+            this.delCustomer({ id:this.deleteId }).then((data) => {
                 if(data.data.code === 1){
                     for(let i=0; i<this.order_data.length;){
-                        if(index === this.order_data[i].id){
+                        if(this.deleteId === this.order_data[i].id){
                             this.order_data.splice(i,1)
                         }else{
                             i++
                         }
                     }
                     this.$Message.success('删除成功!');
+                    this.deleteVisible = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -365,8 +403,6 @@ export default {
             })
 
         }
-
-      
     },
     changePage(page){
         this.pageCurrent = page;
@@ -380,31 +416,60 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getCustomerLists({ id:'',status:'',type:'',start_time:this.date_val[0],end_time:this.date_val[1],name:'',telephone:'',contact:'',search:'',offset:0,limit:size }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
   },
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   },
 
   activated () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCustomerLists({ id:'',status:'',type:'',start_time:'',end_time:'',name:'',telephone:'',contact:'',search:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   }
 }

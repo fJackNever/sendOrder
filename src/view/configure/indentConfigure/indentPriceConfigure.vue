@@ -244,6 +244,7 @@ export default {
             charge:0,
         },
         point_add_edit:1,
+        permission_arr:'',
     }
   },
   methods: {
@@ -263,8 +264,27 @@ export default {
         this.$set(this.formUseValidate,'usePrice',amount)
         this.$set(this.formUseValidate,'status',status)
       }else{
-        this.use_add_edit = 1;
-        this.$refs['formUseValidate'].resetFields();
+          let per_val = ''
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[7000].length; i++){
+                if(this.permission_arr[7000][i] === '7003'){
+                    per_val = 7003
+                }
+            }
+            if(per_val === 7003){
+                this.use_add_edit = 1;
+                this.$refs['formUseValidate'].resetFields();
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.use_add_edit = 1;
+            this.$refs['formUseValidate'].resetFields();
+        }
+        
       }
     },
     changeUsePage(page){
@@ -279,10 +299,20 @@ export default {
     changeUsePageSize(size){
         this.usePageSize = size;
         this.getOrderTypeLists({ id:'',status:'',use_car_type_id:'',order_type:'',offset:0,limit:size,type:1, }).then((data) => {
-            this.use_order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.use_order_data,i,data.data.data.rows[i])
+            
+            if(data.data.code === 1){
+                this.use_order_data = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.use_order_data,i,data.data.data.rows[i])
+                }
+            }else{
+                this.use_order_data = [];
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
+
         })
     },
     handleUseSubmit (name) {
@@ -362,8 +392,29 @@ export default {
         this.$set(this.formPointValidate,'charge',addition_amount)
         this.$set(this.formPointValidate,'status',status)
       }else{
-        this.point_add_edit = 1;
-        this.$refs['formPointValidate'].resetFields();
+
+          let per_val = ''
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[2000].length; i++){
+                if(this.permission_arr[2000][i] === '2001'){
+                    per_val = 2001
+                }
+            }
+            if(per_val === 2001){
+                this.point_add_edit = 1;
+                this.$refs['formPointValidate'].resetFields();
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.point_add_edit = 1;
+            this.$refs['formPointValidate'].resetFields();
+        }
+
+        
       }
     },
     changePointPage(page){
@@ -378,10 +429,20 @@ export default {
     changePointPageSize(size){
         this.pointPageSize = size;
         this.getOrderTypeLists({ id:'',status:'',use_car_type_id:'',order_type:'',offset:0,limit:size,type:2, }).then((data) => {
-            this.point_order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.point_order_data,i,data.data.data.rows[i])
+            
+            if(data.data.code === 1){
+                this.point_order_data = []
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.point_order_data,i,data.data.data.rows[i])
+                }
+            }else{
+                this.point_order_data = [];
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
+
         })
     },
     handlePointSubmit(name){
@@ -452,6 +513,7 @@ export default {
     },
   },
   mounted () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
         data.data.data.rows.map((item,index)=>{
             this.$set(this.useTypeArr,index,item);
@@ -481,29 +543,50 @@ export default {
   },
 
   activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
-        data.data.data.rows.map((item,index)=>{
-            this.$set(this.useTypeArr,index,item);
-        })
+        
+        if(data.data.code === 1){
+            this.useTypeArr = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.useTypeArr,i,data.data.data.rows[i])
+            }
+        }else{
+            this.useTypeArr = [];
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
+
     })
 
     this.getOrderTypeLists({ id:'',status:'',use_car_type_id:'',order_type:'',offset:0,limit:10,type:'' }).then((data) => {
-      let fir_sec_arr = [] ,third_arr = [];
-      for(let i=0; i<data.data.data.rows.length; i++){
-          if( data.data.data.rows[i].order_type === 1 || data.data.data.rows[i].order_type === 2){
-              fir_sec_arr.push(data.data.data.rows[i])
-          }else{
-              third_arr.push(data.data.data.rows[i])
-          }
-      }
+        if(data.data.code === 1){
+            let fir_sec_arr = [] ,third_arr = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                if( data.data.data.rows[i].order_type === 1 || data.data.data.rows[i].order_type === 2){
+                    fir_sec_arr.push(data.data.data.rows[i])
+                }else{
+                    third_arr.push(data.data.data.rows[i])
+                }
+            }
 
-      for(let i=0; i<fir_sec_arr.length; i++){
-        this.$set(this.use_order_data,i,fir_sec_arr[i])
-      }
+            for(let i=0; i<fir_sec_arr.length; i++){
+                this.$set(this.use_order_data,i,fir_sec_arr[i])
+            }
 
-      for(let i=0; i<third_arr.length; i++){
-        this.$set(this.point_order_data,i,third_arr[i])
-      }
+            for(let i=0; i<third_arr.length; i++){
+                this.$set(this.point_order_data,i,third_arr[i])
+            }
+        }else{
+            this.use_order_data = [];
+            this.point_order_data = []
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
 
     })
 

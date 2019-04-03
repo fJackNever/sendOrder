@@ -58,20 +58,38 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-              <Button type="primary" style="margin-right: 5px" @click="checkDriver(row.id)">查看</Button>
-              <Button type="primary" style="margin-right: 5px" @click="edit_indent(row.id)">编辑</Button>
-              <Button type="primary" style="margin-right: 5px" @click="deal_indent(row.id)" v-if="row.status <= 2">处理</Button>
-              <Button type="error" style="margin-right: 5px" @click="stop_indent(row.entity_id)" v-if="row.status === 3">强制结束</Button>
-              <Button type="error" @click="cancel(row.id)" v-if="row.status === 2">取消</Button>
+              <Button type="primary" style="margin-right: 10px" @click="checkDriver(row.id)">查看</Button>
+              <Button type="primary" style="margin-right: 10px" @click="edit_indent(row.id)">编辑</Button>
+              <Button type="primary" style="margin-right: 10px" @click="deal_indent(row.id)" v-if="row.status <= 2">处理</Button>
+              <Button type="error" style="margin-right: 10px" @click="stop_indent(row.entity_id)" v-if="row.status === 3">强制结束</Button>
+              <Button type="error" @click="cancel(row.entity_id)" v-if="row.status === 2">取消</Button>
             </template>
         </Table>
       </Card>
+      <Modal 
+            title="是否强制结束"
+            v-model="stopVisible" 
+            @on-ok="confirmStop"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
+      <Modal 
+            title="是否取消"
+            v-model="cancelVisible" 
+            @on-ok="confirmCancel"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
   </div>
 </template>
 
 <script>
 import topHost from '_c/top-host'
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Modal } from 'iview'
 import { mapActions } from 'vuex'
 export default {
   name: 'unusual_indent',
@@ -86,6 +104,7 @@ export default {
     Table,
     AutoComplete,
     topHost,
+    Modal
   },
   data () {
     return {
@@ -106,7 +125,8 @@ export default {
       order_columns: [
             {
                 title: '城市',
-                key: 'city'
+                key: 'city',
+                width:100,
             },
             {
                 title: '订单编号',
@@ -156,7 +176,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 380,
+                width: 410,
                 align: 'center'
             }
         ],
@@ -164,7 +184,11 @@ export default {
         inputNameShake:'',
         inpuCusShake:'',
         order_status:1,
-        permission_arr:''
+        permission_arr:'',
+        stopVisible:false,
+        stop_entity_id:'',
+        cancelVisible:false,
+        cancel_entity_id:'',
     }
   },
   methods: {
@@ -179,32 +203,72 @@ export default {
     updateTable(index){
         if(index === 0){
             this.getAbnormalOrderLists({ entity_id:'',status:1,city_id:'',driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
             })
         }else if(index === 1){
             this.getAbnormalOrderLists({ entity_id:'',status:2,city_id:'',driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
             })
         }else if(index === 2){
             this.getAbnormalOrderLists({ entity_id:'',status:3,city_id:'',driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
             })
         }
     },
     changeCity(val){
         this.getAbnormalOrderLists({ entity_id:'',status:this.order_status,city_id:val,driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
         })
     },
@@ -212,19 +276,37 @@ export default {
         this.citySelected = -1;
         this.order_status = val
         this.getAbnormalOrderLists({ entity_id:'',status:val,city_id:'',driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
         })
     },
     getStatus(status){
         if(status === 1){
-            return '待处理的异常订单'
+            return '待处理'
         }else if(status === 2){
-            return '待抢单的异常订单'
+            return '待抢单'
         }else if(status === 3){
-            return '进行中的异常订单'
+            return '已接单'
+        }else if(status === 4){
+            return '出发接乘客'
+        }else if(status === 5){
+            return '已接到乘客'
+        }else if(status === 6){
+            return '已完成'
+        }else if(status === 7){
+            return '已取消'
         }
     },
     searchName(value){
@@ -261,11 +343,20 @@ export default {
     },
     find_indent(){
         this.getAbnormalOrderLists({ entity_id:this.indentNum,status:this.order_status,city_id:'',driver_name:this.driverName,customer_name:this.cusName,start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     checkDriver(index,type){
@@ -314,7 +405,11 @@ export default {
         
     },
     stop_indent(entity_id){
+        this.stopVisible = true;
+        this.stop_entity_id = entity_id;
 
+    },
+    confirmStop(){
         let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[5000].length; i++){
@@ -324,9 +419,10 @@ export default {
             }
             if(per_val === 5008){
                 
-                this.forcedEndOrder({ entity_id:entity_id }).then((data) => {
+                this.forcedEndOrder({ entity_id:this.stop_entity_id }).then((data) => {
                     if(data.data.code === 1){
                         this.$Message.success('结束成功!');
+                        this.stopVisible = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -353,9 +449,10 @@ export default {
             }
         }else{
             
-            this.forcedEndOrder({ entity_id:entity_id }).then((data) => {
+            this.forcedEndOrder({ entity_id:this.stop_entity_id }).then((data) => {
                 if(data.data.code === 1){
                     this.$Message.success('结束成功!');
+                    this.stopVisible = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -375,10 +472,13 @@ export default {
             })
 
         }
-
     },
     cancel(index){
+        this.cancelVisible = true;
+        this.cancel_entity_id = index;
 
+    },
+    confirmCancel(){
         let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[5000].length; i++){
@@ -388,9 +488,10 @@ export default {
             }
             if(per_val === 5005){
                 
-                this.cancelOrder({ entity_id:entity_id }).then((data) => {
+                this.cancelOrder({ entity_id:this.cancel_entity_id }).then((data) => {
                     if(data.data.code === 1){
                         this.$Message.success('取消成功!');
+                        this.cancelVisible = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -417,9 +518,10 @@ export default {
                 });
             }
         }else{
-            this.cancelOrder({ entity_id:entity_id }).then((data) => {
+            this.cancelOrder({ entity_id:this.cancel_entity_id }).then((data) => {
                 if(data.data.code === 1){
                     this.$Message.success('取消成功!');
+                    this.cancelVisible = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -439,17 +541,23 @@ export default {
                 }
             })
         }
-
-    },
+    }
   },
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.citySelected = -1;
     this.indentStatus = 1;
     this.getAbnormalHost().then((data) => {
-        this.$set(this.indentHostData,0,{ title:'待处理的异常订单',colSpan:3,value:data.data.data.wait_manage,em:true})
-        this.$set(this.indentHostData,1,{ title:'待抢单的异常订单',colSpan:3,value:data.data.data.wait_order,em:true})
-        this.$set(this.indentHostData,2,{ title:'进行中的异常订单',colSpan:3,value:data.data.data.running,em:false})
+        if(data.data.code === 1){
+            this.$set(this.indentHostData,0,{ title:'待处理的异常订单',colSpan:3,value:data.data.data.wait_manage,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单的异常订单',colSpan:3,value:data.data.data.wait_order,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中的异常订单',colSpan:3,value:data.data.data.running,em:false})
+        }else{
+            this.$set(this.indentHostData,0,{ title:'待处理的异常订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单的异常订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中的异常订单',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getCompanyCityLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
@@ -459,8 +567,19 @@ export default {
     })
 
     this.getAbnormalOrderLists({ entity_id:'',status:1,city_id:'',driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
     })
       
@@ -470,9 +589,16 @@ export default {
     this.citySelected = -1;
     this.indentStatus = 1;
     this.getAbnormalHost().then((data) => {
-        this.$set(this.indentHostData,0,{ title:'待处理的异常订单',colSpan:3,value:data.data.data.wait_manage,em:true})
-        this.$set(this.indentHostData,1,{ title:'待抢单的异常订单',colSpan:3,value:data.data.data.wait_order,em:true})
-        this.$set(this.indentHostData,2,{ title:'进行中的异常订单',colSpan:3,value:data.data.data.running,em:false})
+        if(data.data.code === 1){
+            this.$set(this.indentHostData,0,{ title:'待处理的异常订单',colSpan:3,value:data.data.data.wait_manage,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单的异常订单',colSpan:3,value:data.data.data.wait_order,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中的异常订单',colSpan:3,value:data.data.data.running,em:false})
+        }else{
+            this.$set(this.indentHostData,0,{ title:'待处理的异常订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单的异常订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中的异常订单',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getCompanyCityLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
@@ -482,8 +608,19 @@ export default {
     })
 
     this.getAbnormalOrderLists({ entity_id:'',status:1,city_id:'',driver_name:'',customer_name:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'' }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
     })
       
@@ -492,5 +629,22 @@ export default {
 </script>
 
 <style lang="less">
-
+.reassignModal{
+    .ivu-modal{
+        width: 300px !important;
+    }
+    .ivu-modal-header{
+        border-bottom:none;
+        .ivu-modal-header-inner{
+            text-align: center;
+        }
+    }
+    .ivu-modal-body{
+        display: none;
+    }
+    .ivu-modal-footer{
+        border-top:none;
+        text-align: center;
+    }
+}
 </style>

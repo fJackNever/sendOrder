@@ -215,6 +215,7 @@ export default {
         return check;
     },
     handleSubmit (name) {
+        let per_val = ''
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[4000].length; i++){
                 if(this.permission_arr[4000][i] === '4008'){

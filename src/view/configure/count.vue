@@ -1,9 +1,10 @@
 <template>
   <div style="padding:0 24px 24px;">
 
-      <Card shadow title="发单配置(距离发单时间多久前的订单可以发出)" style="margin-top:10px;">
+      <Card shadow title="订单改派费" style="margin-top:10px;">
             <span style="font-size:14px;padding-right:10px;">订单改派费</span>
             <InputNumber :min="0" placeholder="请输入费用" v-model="changeCharge" style="width:80px;"></InputNumber>
+            <span style="font-size:14px;padding-left:10px;">元</span>
       </Card>
 
       <Card shadow title="订单平台费" style="margin-top:10px;">
@@ -16,11 +17,13 @@
             </div>
 
             <div style="margin:15px 0;">
-                <span style="font-size:14px;padding-right:10px;" v-if="chargeType === 1">平台费价格( 元 )</span>
+                <span style="font-size:14px;padding-right:10px;" v-if="chargeType === 1">平台费价格</span>
                 <InputNumber :min="0" placeholder="请输入价格" v-model="platformPrice" v-if="chargeType === 1" style="width:80px;"></InputNumber>
+                <span style="font-size:14px;padding-left:10px;" v-if="chargeType === 1">元</span>
 
-                <span style="font-size:14px;padding-right:10px;" v-if="chargeType === 2">平台费率( % )</span>
+                <span style="font-size:14px;padding-right:10px;" v-if="chargeType === 2">平台费率</span>
                 <InputNumber :min="0" placeholder="请输入费率" v-model="platformRate" v-if="chargeType === 2" style="width:80px;"></InputNumber>
+                <span style="font-size:14px;padding-left:10px;" v-if="chargeType === 2">%</span>
             </div>
       </Card>
       
@@ -28,11 +31,12 @@
         <div style="margin:15px 0;margin-top:10px;">
             <span style="font-size:14px;padding-right:10px;">商家取消订单费用</span>
             <InputNumber :min="0" placeholder="请输入费用" v-model="cancelCharge" style="width:80px;"></InputNumber>
+            <span style="font-size:14px;padding-left:10px;">元</span>
         </div>
         <div style="margin:15px 0;margin-top:10px;">
             <span style="font-size:14px;padding-right:10px;">商家在订单开始时间</span>
             <InputNumber :min="0" placeholder="请输入时间" v-model="cancelTime" style="width:80px;"></InputNumber>
-            <span style="font-size:14px;padding-left:10px;">多少分钟前可以取消订单</span>
+            <span style="font-size:14px;padding-left:10px;">分钟前可以取消订单</span>
         </div>
       </Card>
 
@@ -50,7 +54,7 @@
                 <Option :value="3">按天</Option>
             </Select>
 
-            <Select v-model="monthVal" placeholder="请选择时间" style="width:100px;margin-right:10px;" v-if="withdrawType === '1'">
+            <Select v-model="monthVal" placeholder="请选择时间" style="width:100px;margin-right:10px;" v-if="withdrawType === 1">
                 <Option :value="0">1号</Option>
                 <Option :value="1">2号</Option>
                 <Option :value="2">3号</Option>
@@ -131,6 +135,7 @@ export default {
       monthVal:0,
       weekVal:0,
       date_val:['00:00:00','00:00:00'],
+      permission_arr:'',
     }
   },
   methods: {
@@ -149,83 +154,180 @@ export default {
         this.$set(this.date_val,1,val[1])
     },
     saveChange(){
-      let plat_amount_rate,cash_date;
-      if(this.chargeType === 1){
-        plat_amount_rate = this.platformPrice * 100
-      }else{
-        plat_amount_rate = this.platformRate
-      }
-      if(this.withdraw_type === 1){
-        this.setCompanySettleConfig({
-          change_order_amount:this.changeCharge * 100,
-          plat_amount_type: this.chargeType,
-          plat_amount:plat_amount_rate,
-          customer_cancel_amount: this.cancelCharge * 100,
-          customer_cancel_time: this.cancelTime,
-          auto_settle: this.countDay,
-          withdraw_type: this.withdrawType,
-          withdraw_date: this.monthVal,
-          withdraw_start_time:this.date_val[0],
-          withdraw_end_time:this.date_val[1],
-          }).then((data) => {
-          if(data.data.code === 1){
-              this.$Message.success('保存成功!');
-          }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: data.data.msg
-              });
-          }
-        })
-      }else if(this.withdraw_type === 2){
-        this.setCompanySettleConfig({
-          change_order_amount:this.changeCharge * 100,
-          plat_amount_type: this.chargeType,
-          plat_amount:plat_amount_rate,
-          customer_cancel_amount: this.cancelCharge * 100,
-          customer_cancel_time: this.cancelTime,
-          auto_settle: this.countDay,
-          withdraw_type: this.withdrawType,
-          withdraw_date: this.weekVal,
-          withdraw_start_time:this.date_val[0],
-          withdraw_end_time:this.date_val[1],
-          }).then((data) => {
-          if(data.data.code === 1){
-              this.$Message.success('保存成功!');
-          }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: data.data.msg
-              });
-          }
-        })
-      }else{
-        this.setCompanySettleConfig({
-          change_order_amount:this.changeCharge * 100,
-          plat_amount_type: this.chargeType,
-          plat_amount:plat_amount_rate,
-          customer_cancel_amount: this.cancelCharge * 100,
-          customer_cancel_time: this.cancelTime,
-          auto_settle: this.countDay,
-          withdraw_type: this.withdrawType,
-          withdraw_date: '',
-          withdraw_start_time:this.date_val[0],
-          withdraw_end_time:this.date_val[1],
-          }).then((data) => {
-          if(data.data.code === 1){
-              this.$Message.success('保存成功!');
-          }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: data.data.msg
-              });
-          }
-        })
-      }
+
+      let per_val = ''
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[7000].length; i++){
+                if(this.permission_arr[7000][i] === '7004'){
+                    per_val = 7004
+                }
+            }
+            if(per_val === 7004){
+                
+                let plat_amount_rate,cash_date;
+                if(this.chargeType === 1){
+                  plat_amount_rate = this.platformPrice * 100
+                }else{
+                  plat_amount_rate = this.platformRate
+                }
+                if(this.withdraw_type === 1){
+                  this.setCompanySettleConfig({
+                    change_order_amount:this.changeCharge * 100,
+                    plat_amount_type: this.chargeType,
+                    plat_amount:plat_amount_rate,
+                    customer_cancel_amount: this.cancelCharge * 100,
+                    customer_cancel_time: this.cancelTime,
+                    auto_settle: this.countDay,
+                    withdraw_type: this.withdrawType,
+                    withdraw_date: this.monthVal,
+                    withdraw_start_time:this.date_val[0],
+                    withdraw_end_time:this.date_val[1],
+                    }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('保存成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                  })
+                }else if(this.withdraw_type === 2){
+                  this.setCompanySettleConfig({
+                    change_order_amount:this.changeCharge * 100,
+                    plat_amount_type: this.chargeType,
+                    plat_amount:plat_amount_rate,
+                    customer_cancel_amount: this.cancelCharge * 100,
+                    customer_cancel_time: this.cancelTime,
+                    auto_settle: this.countDay,
+                    withdraw_type: this.withdrawType,
+                    withdraw_date: this.weekVal,
+                    withdraw_start_time:this.date_val[0],
+                    withdraw_end_time:this.date_val[1],
+                    }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('保存成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                  })
+                }else{
+                  this.setCompanySettleConfig({
+                    change_order_amount:this.changeCharge * 100,
+                    plat_amount_type: this.chargeType,
+                    plat_amount:plat_amount_rate,
+                    customer_cancel_amount: this.cancelCharge * 100,
+                    customer_cancel_time: this.cancelTime,
+                    auto_settle: this.countDay,
+                    withdraw_type: this.withdrawType,
+                    withdraw_date: '',
+                    withdraw_start_time:this.date_val[0],
+                    withdraw_end_time:this.date_val[1],
+                    }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('保存成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                  })
+                }
+
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            
+            let plat_amount_rate,cash_date;
+            if(this.chargeType === 1){
+              plat_amount_rate = this.platformPrice * 100
+            }else{
+              plat_amount_rate = this.platformRate
+            }
+            if(this.withdraw_type === 1){
+              this.setCompanySettleConfig({
+                change_order_amount:this.changeCharge * 100,
+                plat_amount_type: this.chargeType,
+                plat_amount:plat_amount_rate,
+                customer_cancel_amount: this.cancelCharge * 100,
+                customer_cancel_time: this.cancelTime,
+                auto_settle: this.countDay,
+                withdraw_type: this.withdrawType,
+                withdraw_date: this.monthVal,
+                withdraw_start_time:this.date_val[0],
+                withdraw_end_time:this.date_val[1],
+                }).then((data) => {
+                if(data.data.code === 1){
+                    this.$Message.success('保存成功!');
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+              })
+            }else if(this.withdraw_type === 2){
+              this.setCompanySettleConfig({
+                change_order_amount:this.changeCharge * 100,
+                plat_amount_type: this.chargeType,
+                plat_amount:plat_amount_rate,
+                customer_cancel_amount: this.cancelCharge * 100,
+                customer_cancel_time: this.cancelTime,
+                auto_settle: this.countDay,
+                withdraw_type: this.withdrawType,
+                withdraw_date: this.weekVal,
+                withdraw_start_time:this.date_val[0],
+                withdraw_end_time:this.date_val[1],
+                }).then((data) => {
+                if(data.data.code === 1){
+                    this.$Message.success('保存成功!');
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+              })
+            }else{
+              this.setCompanySettleConfig({
+                change_order_amount:this.changeCharge * 100,
+                plat_amount_type: this.chargeType,
+                plat_amount:plat_amount_rate,
+                customer_cancel_amount: this.cancelCharge * 100,
+                customer_cancel_time: this.cancelTime,
+                auto_settle: this.countDay,
+                withdraw_type: this.withdrawType,
+                withdraw_date: '',
+                withdraw_start_time:this.date_val[0],
+                withdraw_end_time:this.date_val[1],
+                }).then((data) => {
+                if(data.data.code === 1){
+                    this.$Message.success('保存成功!');
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+              })
+            }
+
+        }
+
     }
   },
   mounted () {
+    this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCompanySettleConfig().then((data) => {
+        if(data.data.code === 1){
         this.changeCharge = data.data.data.change_order_amount/100
         this.chargeType = data.data.data.plat_amount_type
         if(data.data.data.plat_amount_type === 1){
@@ -247,10 +349,18 @@ export default {
 
         this.$set(this.date_val,0,data.data.data.withdraw_start_time)
         this.$set(this.date_val,1,data.data.data.withdraw_end_time)
+      }else{
+        this.$Notice.warning({
+            title: '嘀友提醒',
+            desc: data.data.msg
+        });
+      }
     })
   },
   activated () {
+    this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCompanySettleConfig().then((data) => {
+      if(data.data.code === 1){
         this.changeCharge = data.data.data.change_order_amount/100
         this.chargeType = data.data.data.plat_amount_type
         if(data.data.data.plat_amount_type === 1){
@@ -272,6 +382,13 @@ export default {
 
         this.$set(this.date_val,0,data.data.data.withdraw_start_time)
         this.$set(this.date_val,1,data.data.data.withdraw_end_time)
+      }else{
+        this.$Notice.warning({
+            title: '嘀友提醒',
+            desc: data.data.msg
+        });
+      }
+        
     })
   }
 }

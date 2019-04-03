@@ -25,7 +25,11 @@
         <span style="font-size:14px;padding-right:10px;">订单编号</span>
         <Input v-model="indentNum" placeholder="请输入订单编号" style="width:200px"></Input>
 
-        <span style="font-size:14px;padding-right:10px;padding-left:20px;">司机姓名</span>
+        <Button type="success" style="margin-left:30px;" @click="find_indent(1)">查询</Button>
+
+        <Divider />
+
+        <span style="font-size:14px;padding-right:10px;">司机姓名</span>
         <AutoComplete
         v-model="driverName"
         @on-search="searchName"
@@ -48,8 +52,11 @@
         <span style="font-size:14px;padding-right:10px;padding-left:20px;">乘客手机号</span>
         <Input v-model="passengerPhone" placeholder="请输入乘客手机号" style="width:200px"></Input>
 
-        <Button type="success" style="margin-left:30px;" @click="find_indent()">查询</Button>
-        <Button type="success" style="margin-left:30px;" @click="new_edit_indent(1)">新增订单</Button>
+        <Button type="success" style="margin-left:30px;" @click="find_indent(2)">查询</Button>
+
+        <Divider />
+        
+        <Button type="success" @click="new_indent('new')">发单</Button>
 
         <Divider />
         
@@ -60,19 +67,28 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-              <Button type="primary" style="margin-right: 5px" @click="checkDriver(row.id)">查看并处理</Button>
-                <Button type="primary" style="margin-right: 5px" @click="new_edit_indent(2,row.id)">编辑</Button>
-                <Button type="error" @click="cancel(row.id,row.entity_id)" v-if="row.status <= 3">取消</Button>
+              <Button type="primary" style="margin-right: 10px" @click="checkDriver(row.id)">查看并处理</Button>
+                <Button type="primary" style="margin-right: 10px" @click="new_edit_indent(2,row.id)">编辑</Button>
+                <Button type="error" @click="cancel(row.entity_id)" v-if="row.status <= 3">取消</Button>
             </template>
         </Table>
         <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
       </Card>
+      <Modal 
+            title="是否取消"
+            v-model="cancelVisible" 
+            @on-ok="confirmCancel"
+            ok-text="是"
+            cancel-text="否"
+            class="reassignModal"
+      >
+      </Modal>
   </div>
 </template>
 
 <script>
 import topHost from '_c/top-host'
-import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page } from 'iview'
+import { Card,Input,Button,Divider,DatePicker,Select,Option,Table,AutoComplete,Page,Modal } from 'iview'
 import { mapActions } from 'vuex'
 export default {
   name: 'indentManage',
@@ -87,7 +103,8 @@ export default {
     Table,
     AutoComplete,
     topHost,
-    Page
+    Page,
+    Modal
   },
   data () {
     return {
@@ -114,7 +131,8 @@ export default {
       order_columns: [
             {
                 title: '城市',
-                key: 'city'
+                key: 'city',
+                width:100,
             },
             {
                 title: '订单编号',
@@ -145,6 +163,15 @@ export default {
                 key: 'customer_name'
             },
             {
+                title: '订单类型',
+                key: 'order_type',
+                render: (h, params) => {
+                    return h('div', [
+                        h('div',this.getType(params.row.order_type)),
+                    ]);
+                }
+            },
+            {
                 title: '状态',
                 key: 'status',
                 render: (h, params) => {
@@ -164,7 +191,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 260,
+                width: 290,
                 align: 'center'
             }
         ],
@@ -174,7 +201,9 @@ export default {
         pageCurrent:1,
         inputNameShake:'',
         inpuCusShake:'',
-        permission_arr:''
+        permission_arr:'',
+        cancelVisible:false,
+        cancel_entity_id:'',
     }
   },
   methods: {
@@ -189,52 +218,115 @@ export default {
     updateTable(index){
         if(index === 0){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:1,other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 1){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:2,other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 2){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:2,start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 3){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:6,other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 4){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:7,other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 5){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
+        }
+    },
+    getType(order_type){
+        if(order_type === 1){
+            return '日租'
+        }else if(order_type === 2){
+            return '半日租'
+        }else if(order_type === 3){
+            return '点对点'
         }
     },
     getStatus(status){
@@ -258,19 +350,37 @@ export default {
         this.indentStatus = -1;
         if(val === -1){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else{
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:val,use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
@@ -278,19 +388,37 @@ export default {
         this.citySelected = -1
         if(val === -1){
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else{
             this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:val,other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
@@ -326,14 +454,42 @@ export default {
             this.cusName = data.data.data.rows[0].name
         })
     },
-    find_indent(){
-        this.getOrderLists({ id:'',entity_id:this.indentNum,customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:this.driverName,customer_name:this.cusName,passenger_tel:this.passengerPhone,offset:0,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-            this.pageTotal = data.data.data.total
-        })
+    find_indent(type){
+        if(type === 1){
+            this.getOrderLists({ id:'',entity_id:this.indentNum,customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:this.pageSize }).then((data) => {
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+            })
+        }else{
+            this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:this.driverName,customer_name:this.cusName,passenger_tel:this.passengerPhone,offset:0,limit:this.pageSize }).then((data) => {
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
+                }
+            })
+        }
     },
     checkDriver(index){
         let per_val = ''
@@ -356,11 +512,30 @@ export default {
         }
 
     },
+    new_indent(new_type){
+        let per_val = '' 
+        if(this.permission_arr[0] !== '9999'){
+            for(let i=0; i<this.permission_arr[5000].length; i++){
+                if(this.permission_arr[5000][i] === '5001'){
+                    per_val = 5001
+                }
+            }
+            if(per_val === 5001){
+                this.$router.push({path:'new_indent',query:{type:new_type}});
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+        }else{
+            this.$router.push({path:'new_indent',query:{type:new_type}});
+        }
+    },
     new_edit_indent(type,index){
       
         let per_val = '' 
 
-      if(index){
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[5000].length; i++){
                 if(this.permission_arr[5000][i] === '5002'){
@@ -378,32 +553,15 @@ export default {
         }else{
             this.$router.push({path:'edit_indent',query:{id:index}});
         }
-
-      }else{
-        
-        if(this.permission_arr[0] !== '9999'){
-            for(let i=0; i<this.permission_arr[5000].length; i++){
-                if(this.permission_arr[5000][i] === '5001'){
-                    per_val = 5001
-                }
-            }
-            if(per_val === 5001){
-                this.$router.push({path:'new_indent'});
-            }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-            }
-        }else{
-            this.$router.push({path:'new_indent'});
-        }
-
-        
-      }
     },
-    cancel(index,entity_id){
-        let per_val = '' 
+    cancel(entity_id){
+
+        this.cancelVisible = true;
+        this.cancel_entity_id = entity_id;
+
+    },
+    confirmCancel(){
+         let per_val = '' 
 
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[5000].length; i++){
@@ -413,9 +571,10 @@ export default {
             }
             if(per_val === 5005){
                 
-                this.cancelOrder({ entity_id:entity_id }).then((data) => {
+                this.cancelOrder({ entity_id:this.cancel_entity_id }).then((data) => {
                     if(data.data.code === 1){
                         this.$Message.success('取消成功!');
+                        this.cancelVisible = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -442,9 +601,10 @@ export default {
                 });
             }
         }else{
-            this.cancelOrder({ entity_id:entity_id }).then((data) => {
+            this.cancelOrder({ entity_id:this.cancel_entity_id }).then((data) => {
                 if(data.data.code === 1){
                     this.$Message.success('取消成功!');
+                    this.cancelVisible = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -464,8 +624,6 @@ export default {
                 }
             })
         }
-
-        
     },
     changePage(page){
         this.pageCurrent = page;
@@ -479,11 +637,20 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:size }).then((data) => {
-            this.order_data = [];
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
   },
@@ -492,19 +659,39 @@ export default {
     this.citySelected = -1;
     this.indentStatus = -1;
     this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
     this.getOrderHost().then((data) => {
-        this.$set(this.indentHostData,0,{ title:'待处理订单',colSpan:3,value:data.data.data.wait_order,em:true})
-        this.$set(this.indentHostData,1,{ title:'待抢单订单',colSpan:3,value:data.data.data.wait_get,em:true})
-        this.$set(this.indentHostData,2,{ title:'进行中订单',colSpan:3,value:data.data.data.running,em:true})
-        this.$set(this.indentHostData,3,{ title:'已完成订单',colSpan:3,value:data.data.data.finish,em:true})
-        this.$set(this.indentHostData,4,{ title:'已取消订单',colSpan:3,value:data.data.data.cancel,em:true})
-        this.$set(this.indentHostData,5,{ title:'所有订单',colSpan:3,value:data.data.data.total,em:false})
+        if(data.data.code === 1){
+            this.$set(this.indentHostData,0,{ title:'待处理订单',colSpan:3,value:data.data.data.wait_order,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单订单',colSpan:3,value:data.data.data.wait_get,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中订单',colSpan:3,value:data.data.data.running,em:true})
+            this.$set(this.indentHostData,3,{ title:'已完成订单',colSpan:3,value:data.data.data.finish,em:true})
+            this.$set(this.indentHostData,4,{ title:'已取消订单',colSpan:3,value:data.data.data.cancel,em:true})
+            this.$set(this.indentHostData,5,{ title:'所有订单',colSpan:3,value:data.data.data.total,em:false})
+        }else{
+            this.$set(this.indentHostData,0,{ title:'待处理订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,3,{ title:'已完成订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,4,{ title:'已取消订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,5,{ title:'所有订单',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getCompanyCityLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
@@ -519,19 +706,38 @@ export default {
     this.citySelected = -1;
     this.indentStatus = -1;
     this.getOrderLists({ id:'',entity_id:'',customer_id:'',city_id:'',use_car_type_id:'',status:'',other_status:'',start_start_time:'',start_end_time:'',create_start_time:'',create_end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
     this.getOrderHost().then((data) => {
-        this.$set(this.indentHostData,0,{ title:'待处理订单',colSpan:3,value:data.data.data.wait_order,em:true})
-        this.$set(this.indentHostData,1,{ title:'待抢单订单',colSpan:3,value:data.data.data.wait_get,em:true})
-        this.$set(this.indentHostData,2,{ title:'进行中订单',colSpan:3,value:data.data.data.running,em:true})
-        this.$set(this.indentHostData,3,{ title:'已完成订单',colSpan:3,value:data.data.data.finish,em:true})
-        this.$set(this.indentHostData,4,{ title:'已取消订单',colSpan:3,value:data.data.data.cancel,em:true})
-        this.$set(this.indentHostData,5,{ title:'所有订单',colSpan:3,value:data.data.data.total,em:false})
+       if(data.data.code === 1){
+            this.$set(this.indentHostData,0,{ title:'待处理订单',colSpan:3,value:data.data.data.wait_order,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单订单',colSpan:3,value:data.data.data.wait_get,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中订单',colSpan:3,value:data.data.data.running,em:true})
+            this.$set(this.indentHostData,3,{ title:'已完成订单',colSpan:3,value:data.data.data.finish,em:true})
+            this.$set(this.indentHostData,4,{ title:'已取消订单',colSpan:3,value:data.data.data.cancel,em:true})
+            this.$set(this.indentHostData,5,{ title:'所有订单',colSpan:3,value:data.data.data.total,em:false})
+        }else{
+            this.$set(this.indentHostData,0,{ title:'待处理订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,1,{ title:'待抢单订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,2,{ title:'进行中订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,3,{ title:'已完成订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,4,{ title:'已取消订单',colSpan:3,value:0,em:true})
+            this.$set(this.indentHostData,5,{ title:'所有订单',colSpan:3,value:0,em:false})
+        }
     })
 
     this.getCompanyCityLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {

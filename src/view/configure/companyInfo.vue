@@ -1,61 +1,75 @@
 <template>
   <div style="padding:0 24px 24px;">
       <Card shadow :title="cardTitle" style="margin-top:10px;">
-            <Form ref="formValidate" :model="formValidate" :rules="ruleValidate" :label-width="160" >
+          <Row>
+              <Col span="12">
+                  <Form ref="formValidate" :model="formValidate" :rules="ruleValidate" :label-width="160" >
                 
-                <FormItem label="公司编号" prop="entity_id" :label-width="120">
-                    <Input v-model="formValidate.entity_id" placeholder="请输入公司编号" style="width:200px" disabled></Input>
-                </FormItem>
+                    <FormItem label="公司编号" prop="entity_id" :label-width="120">
+                        <Input v-model="formValidate.entity_id" placeholder="请输入公司编号" style="width:200px" disabled></Input>
+                    </FormItem>
 
-                <FormItem label="公司名称" prop="company_name" :label-width="120">
-                    <Input v-model="formValidate.company_name" placeholder="请输入公司名称" style="width:200px"></Input>
-                </FormItem>
+                    <FormItem label="公司名称" prop="company_name" :label-width="120">
+                        <Input v-model="formValidate.company_name" placeholder="请输入公司名称" style="width:200px"></Input>
+                    </FormItem>
 
-                <FormItem label="公司电话" prop="telephone" :label-width="120">
-                    <Input v-model="formValidate.telephone" placeholder="请输入公司电话" style="width:200px"></Input>
-                </FormItem>
+                    <FormItem label="公司电话" prop="telephone" :label-width="120">
+                        <Input v-model="formValidate.telephone" placeholder="请输入公司电话" style="width:200px"></Input>
+                    </FormItem>
 
-                <FormItem label="公司地址" prop="address" :label-width="120">
-                    <Input v-model="formValidate.address" placeholder="请输入公司地址" style="width:200px"></Input>
-                    <Icon type="ios-pin" :size="25" style="margin-left:10px;cursor:pointer;" @click="showAddress()"/>
-                </FormItem>
+                    <FormItem label="公司地址" prop="address" :label-width="120">
+                        <Input v-model="formValidate.address" placeholder="请输入公司地址" style="width:200px"></Input>
+                        <Icon type="ios-pin" :size="25" style="margin-left:10px;cursor:pointer;" @click="showAddress()"/>
+                    </FormItem>
 
-                <FormItem label="客服电话" prop="service_tel" :label-width="120">
-                    <Input v-model="formValidate.service_tel" placeholder="请输入公司电话" style="width:200px"></Input>
-                </FormItem>
+                    <FormItem label="客服电话" prop="service_tel" :label-width="120">
+                        <Input v-model="formValidate.service_tel" placeholder="请输入公司电话" style="width:200px"></Input>
+                    </FormItem>
 
-                <FormItem label="公司营业执照" prop="operatePic" :label-width="120">
-                    <div class="demo-upload-list" v-for="item in operateList">
-                        <img :src="item.url">
-                        <div class="demo-upload-list-cover">
-                            <Icon type="ios-eye-outline" @click.native="handleView(item.url)"></Icon>
-                            <Icon type="ios-trash-outline" @click.native="handleRemove()"></Icon>
+                    <FormItem label="公司营业执照" prop="operatePic" :label-width="120">
+                        <div class="demo-upload-list" v-for="item in operateList">
+                            <img :src="item.url">
+                            <div class="demo-upload-list-cover">
+                                <Icon type="ios-eye-outline" @click.native="handleView(item.url)"></Icon>
+                                <Icon type="ios-trash-outline" @click.native="handleRemove()"></Icon>
+                            </div>
                         </div>
+                        <Upload
+                            ref="operateUpload"
+                            :show-upload-list="false"
+                            :format="['jpg','jpeg','png']"
+                            :on-format-error="handleFormatError"
+                            :before-upload="handleOperate"
+                            type="drag"
+                            action=""
+                            :style="{display: operateList.length === 1 ? 'none' : 'inline-block' ,width:'58px'}">
+                            <div style="width: 58px;height:58px;line-height: 58px;">
+                                <Icon type="ios-camera" size="20"></Icon>
+                            </div>
+                        </Upload>
+                    </FormItem>
+
+                    <FormItem label="公司介绍" prop="introduction" :label-width="120">
+                        <Input v-model="formValidate.introduction" type="textarea" :rows="8" :autosize="{minRows: 5,maxRows: 8}" placeholder="请输入公司介绍..." style="width:400px"></Input>
+                    </FormItem>
+
+                    <FormItem>
+                        <Button type="primary" @click="handleSubmit('formValidate')">保存</Button>
+                    </FormItem>
+
+                </Form>
+              </Col>
+              <Col span="12" style="display:flex;justify-content:flex-start;align-items:center;margin-top:90px;">
+                    <div style="text-align:center;">
+                        <div style="margin-bottom:5px;text-align:center;">公司专属司机邀请二维码</div>
+                        <div id='code'></div>
+                        <canvas id="canvas"></canvas>
+                        <div style="margin-top:5px;">{{code_url}}</div>
+                        
                     </div>
-                    <Upload
-                        ref="operateUpload"
-                        :show-upload-list="false"
-                        :format="['jpg','jpeg','png']"
-                        :on-format-error="handleFormatError"
-                        :before-upload="handleOperate"
-                        type="drag"
-                        action=""
-                        :style="{display: operateList.length === 1 ? 'none' : 'inline-block' ,width:'58px'}">
-                        <div style="width: 58px;height:58px;line-height: 58px;">
-                            <Icon type="ios-camera" size="20"></Icon>
-                        </div>
-                    </Upload>
-                </FormItem>
-
-                <FormItem label="公司介绍" prop="introduction" :label-width="120">
-                    <Input v-model="formValidate.introduction" type="textarea" :rows="8" :autosize="{minRows: 5,maxRows: 8}" placeholder="请输入公司介绍..." style="width:400px"></Input>
-                </FormItem>
-
-                <FormItem>
-                    <Button type="primary" @click="handleSubmit('formValidate')">保存</Button>
-                </FormItem>
-
-            </Form>
+              </Col>
+          </Row>
+            
       </Card>
       <Modal title="图片预览" v-model="pic_visible" :footer-hide="true">
         <img :src="allPicModal" v-if="pic_visible" style="width: 100%">
@@ -71,7 +85,8 @@
 </template>
 
 <script>
-import { Row,Card,Input,Button,Form,FormItem,Icon,Upload,Modal, } from 'iview'
+import QRCode from 'qrcode'
+import { Row,Col,Card,Input,Button,Form,FormItem,Icon,Upload,Modal, } from 'iview'
 import { mapActions } from 'vuex' 
 import { AMapManager } from 'vue-amap';
 let amapManager=new AMapManager();
@@ -79,6 +94,7 @@ export default {
   name: 'companyInfo',
   components: {
     Row,
+    Col,
     Card,
     Input,
     Button,
@@ -87,6 +103,7 @@ export default {
     Icon,
     Upload,
     Modal,
+    QRCode
   },
   data () {
     return {
@@ -109,6 +126,8 @@ export default {
             this.$set(this.conpany_address,1,e.lnglat.lat)
         }
       },
+      permission_arr:'',
+      code_url:''
     }
   },
   methods: {
@@ -118,6 +137,7 @@ export default {
       'uploadPic',
       'getLngLat',
       'changeLngLat',
+      'getDriverRegisterUrl'
     ]),
 
     handleView (url) {
@@ -180,34 +200,82 @@ export default {
         })
     },
     handleSubmit (name) {
-        this.$refs[name].validate((valid) => {
-            let address_lng_lat = {};
-            if(this.conpany_address){
-                address_lng_lat.longitude = this.conpany_address[0]
-                address_lng_lat.latitude = this.conpany_address[1]
-            }
-            this.setCompanyBaseConfig({ 
-                company_name:this.formValidate.company_name || '',
-                telephone: this.formValidate.telephone || '',
-                address:this.formValidate.address || '',
-                address_location:JSON.stringify(address_lng_lat),
-                bussiness_path:this.operateList[0].url || '',
-                introduction:this.formValidate.introduction || '',
-                service_tel:this.formValidate.service_tel || '',
-                }).then((data) => {
-                if(data.data.code === 1){
-                    this.$Message.success('保存成功!');
-                }else{
-                    this.$Notice.warning({
-                        title: '嘀友提醒',
-                        desc: data.data.msg
-                    });
+        let per_val = '';
+
+        if(this.permission_arr[0] !== '9999'){
+
+            for(let i=0; i<this.permission_arr[7000].length; i++){
+                if(this.permission_arr[7000][i] === '7001'){
+                    per_val = 7001
                 }
-            })   
-        })
+            }
+
+            if(per_val === 7001){
+                this.$refs[name].validate((valid) => {
+                    let address_lng_lat = {};
+                    if(this.conpany_address){
+                        address_lng_lat.longitude = this.conpany_address[0]
+                        address_lng_lat.latitude = this.conpany_address[1]
+                    }
+                    this.setCompanyBaseConfig({ 
+                        company_name:this.formValidate.company_name || '',
+                        telephone: this.formValidate.telephone || '',
+                        address:this.formValidate.address || '',
+                        address_location:JSON.stringify(address_lng_lat),
+                        bussiness_path:this.operateList[0].url || '',
+                        introduction:this.formValidate.introduction || '',
+                        service_tel:this.formValidate.service_tel || '',
+                        }).then((data) => {
+                        if(data.data.code === 1){
+                            this.$Message.success('保存成功!');
+                        }else{
+                            this.$Notice.warning({
+                                title: '嘀友提醒',
+                                desc: data.data.msg
+                            });
+                        }
+                    })   
+                })
+            }else{
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: '暂无权限访问！'
+                });
+            }
+
+        }else{
+            this.$refs[name].validate((valid) => {
+                let address_lng_lat = {};
+                if(this.conpany_address){
+                    address_lng_lat.longitude = this.conpany_address[0]
+                    address_lng_lat.latitude = this.conpany_address[1]
+                }
+                this.setCompanyBaseConfig({ 
+                    company_name:this.formValidate.company_name || '',
+                    telephone: this.formValidate.telephone || '',
+                    address:this.formValidate.address || '',
+                    address_location:JSON.stringify(address_lng_lat),
+                    bussiness_path:this.operateList[0].url || '',
+                    introduction:this.formValidate.introduction || '',
+                    service_tel:this.formValidate.service_tel || '',
+                    }).then((data) => {
+                    if(data.data.code === 1){
+                        this.$Message.success('保存成功!');
+                    }else{
+                        this.$Notice.warning({
+                            title: '嘀友提醒',
+                            desc: data.data.msg
+                        });
+                    }
+                })   
+            })
+        }
+
+        
     },
   },
   mounted () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCompanyBaseConfig().then((data) => {
         if(data.data.code === 1){
             this.$set(this.formValidate,'company_name',data.data.data.company_name || '')
@@ -234,8 +302,34 @@ export default {
             });
         }
     })
+
+    this.getDriverRegisterUrl().then((data) => {
+        if(data.data.code === 1){
+
+            let canvas = document.getElementById('canvas')
+
+            QRCode.toCanvas(canvas, data.data.data.url,(error)=>{
+                if(error){
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: error
+                    });
+                }
+
+                this.code_url = data.data.data.url
+            })
+            
+        }else{
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
+    })
+
   },
   activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCompanyBaseConfig().then((data) => {
         if(data.data.code === 1){
             this.$set(this.formValidate,'company_name',data.data.data.company_name || '')
@@ -262,6 +356,31 @@ export default {
             });
         }
     })
+
+    this.getDriverRegisterUrl().then((data) => {
+        if(data.data.code === 1){
+
+            let canvas = document.getElementById('canvas')
+
+            QRCode.toCanvas(canvas, data.data.data.url,(error)=>{
+                if(error){
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: error
+                    });
+                }
+
+                this.code_url = data.data.data.url
+            })
+            
+        }else{
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
+        }
+    })
+
   }
 }
 </script>

@@ -54,6 +54,26 @@ router.beforeEach((to, from, next) => {
       siderShowType:true,
       menuName:"5"
     })
+  }else if(to.path === '/home' && parseInt(window.localStorage.getItem('MenuName')) === 6){
+    store.dispatch('hideSider',{
+      siderShowType:true,
+      menuName:"6"
+    })
+  }else if(to.path === '/home' && parseInt(window.localStorage.getItem('MenuName')) === 7){
+    store.dispatch('hideSider',{
+      siderShowType:true,
+      menuName:"7"
+    })
+  }else if(to.path === '/home' && parseInt(window.localStorage.getItem('MenuName')) === 8){
+    store.dispatch('hideSider',{
+      siderShowType:true,
+      menuName:"8"
+    })
+  }else if(to.path === '/home' && parseInt(window.localStorage.getItem('MenuName')) === 9){
+    store.dispatch('hideSider',{
+      siderShowType:true,
+      menuName:"9"
+    })
   }else if(to.path === '/home' && !window.localStorage.getItem('MenuName')){
     store.dispatch('hideSider',{
       siderShowType:false,
@@ -95,6 +115,12 @@ router.beforeEach((to, from, next) => {
             }else if(parseInt(window.localStorage.getItem('MenuName')) === 7){
               store.dispatch('transferAccess',['configureCheck'])
               turnTo(to, ['configureCheck'], next)
+            }else if(parseInt(window.localStorage.getItem('MenuName')) === 8){
+              store.dispatch('transferAccess',['merchantCheck'])
+              turnTo(to, ['merchantCheck'], next)
+            }else if(parseInt(window.localStorage.getItem('MenuName')) === 9){
+              store.dispatch('transferAccess',['merchantIndentCheck'])
+              turnTo(to, ['merchantIndentCheck'], next)
             }
           }else{
               next({

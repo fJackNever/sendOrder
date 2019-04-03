@@ -2,10 +2,10 @@
   <Layout style="height: 100%" class="main">
     <Header class="mainHeader">
       <Menu mode="horizontal" theme="dark" :active-name="app.topMenuName" ref="menuRef" @on-select="changeManage" :style="{background:'#26394E'}">
-          <div class="layout-nav">
+          <div class="layout-nav" v-if="driver_versions">
               <div class="menuIcon">
-                <img :src="diuberLogo" />
-                <span>嘀友用车</span>
+                <img :src="company_log ? company_log : diuberLogo" />
+                <span>{{plat_name ? plat_name : '嘀友用车'}}</span>
               </div>
               <MenuItem name="1">工作台统计</MenuItem>
               <MenuItem name="2" v-if="driver_show">司机管理</MenuItem>
@@ -14,6 +14,15 @@
               <MenuItem name="5" v-if="car_show">车辆管理</MenuItem>
               <MenuItem name="6" v-if="cus_show">客户管理</MenuItem>
               <MenuItem name="7" v-if="configure_show">配置管理</MenuItem>
+          </div>
+          <div class="layout-nav" v-if="merchant_versions">
+              <div class="menuIcon">
+                <img :src="company_log ? company_log : diuberLogo" />
+                <span>{{plat_name ? plat_name : '嘀友用车'}}</span>
+              </div>
+              <MenuItem name="1">工作台统计</MenuItem>
+              <MenuItem name="9">订单管理</MenuItem>
+              <MenuItem name="8">个人中心</MenuItem>
           </div>
           <header-bar :collapsed="collapsed" >
             <user :message-unread-count="unreadCount" />
@@ -90,6 +99,10 @@ export default {
       car_show:false,
       cus_show:false,
       configure_show:false,
+      driver_versions:true,
+      merchant_versions:false,
+      company_log:'',
+      plat_name:''
     }
   },
   computed: {
@@ -97,7 +110,7 @@ export default {
         'app',
     ]),
     tagNavList () {
-      return this.$store.state.app.tagNavList
+        return this.$store.state.app.tagNavList
     },
     tagRouter () {
       return this.$store.state.app.tagRouter
@@ -145,480 +158,28 @@ export default {
         window.open(name.split('_')[1])
         return
       }
-
-      let new_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
-       if(new_arr[0] === '9999'){
-          this.$router.push({
-            name,
-            params,
-            query
-          })
-       }else{
-         let permission_val = '';
-         if(name === 'driverManage'){
-           if(new_arr[2000]){
-             for(let i=0; i<new_arr[2000].length; i++){
-               if(new_arr[2000][i] === '2001'){
-                 permission_val = 2001
-               }
-             }
-
-             if(permission_val === 2001){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'motorcadeManage'){
-           if(new_arr[4000]){
-             for(let i=0; i<new_arr[4000].length; i++){
-               if(new_arr[4000][i] === '4007'){
-                 permission_val = 4007
-               }
-             }
-
-             if(permission_val === 4007){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'indentManage' || name === 'reassign_indent' || name === 'unusual_indent'){
-           if(new_arr[5000]){
-             for(let i=0; i<new_arr[5000].length; i++){
-               if(new_arr[5000][i] === '5003'){
-                 permission_val = 5003
-               }
-             }
-
-             if(permission_val === 5003){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'countList'){
-           if(new_arr[6000]){
-             for(let i=0; i<new_arr[6000].length; i++){
-               if(new_arr[6000][i] === '6001'){
-                 permission_val = 6001
-               }
-             }
-
-             if(permission_val === 6001){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'driverBill'){
-           if(new_arr[6000]){
-             for(let i=0; i<new_arr[6000].length; i++){
-               if(new_arr[6000][i] === '6002'){
-                 permission_val = 6002
-               }
-             }
-
-             if(permission_val === 6002){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'driverWallet'){
-           if(new_arr[6000]){
-             for(let i=0; i<new_arr[6000].length; i++){
-               if(new_arr[6000][i] === '6010'){
-                 permission_val = 6010
-               }
-             }
-
-             if(permission_val === 6010){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'withdraw'){
-           if(new_arr[6000]){
-             for(let i=0; i<new_arr[6000].length; i++){
-               if(new_arr[6000][i] === '6003'){
-                 permission_val = 6003
-               }
-             }
-
-             if(permission_val === 6003){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'createBill'){
-           if(new_arr[6000]){
-             for(let i=0; i<new_arr[6000].length; i++){
-               if(new_arr[6000][i] === '6006'){
-                 permission_val = 6006
-               }
-             }
-
-             if(permission_val === 6006){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'financeRecord'){
-           if(new_arr[6000]){
-             for(let i=0; i<new_arr[6000].length; i++){
-               if(new_arr[6000][i] === '6013'){
-                 permission_val = 6013
-               }
-             }
-
-             if(permission_val === 6013){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'vehicleList'){
-           if(new_arr[3000]){
-             for(let i=0; i<new_arr[3000].length; i++){
-               if(new_arr[3000][i] === '3003'){
-                 permission_val = 3003
-               }
-             }
-
-             if(permission_val === 3003){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'customerList'){
-           if(new_arr[1000]){
-             for(let i=0; i<new_arr[1000].length; i++){
-               if(new_arr[1000][i] === '1002'){
-                 permission_val = 1002
-               }
-             }
-
-             if(permission_val === 1002){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'companyInfo'){
-           if(new_arr[7000]){
-             for(let i=0; i<new_arr[7000].length; i++){
-               if(new_arr[7000][i] === '7001'){
-                 permission_val = 7001
-               }
-             }
-
-             if(permission_val === 7001){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'city'){
-           if(new_arr[7000]){
-             for(let i=0; i<new_arr[7000].length; i++){
-               if(new_arr[7000][i] === '7006'){
-                 permission_val = 7006
-               }
-             }
-
-             if(permission_val === 7006){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'useCarType' || name === 'brandType'){
-           if(new_arr[7000]){
-             for(let i=0; i<new_arr[7000].length; i++){
-               if(new_arr[7000][i] === '7002'){
-                 permission_val = 7002
-               }
-             }
-
-             if(permission_val === 7002){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'indentDefaultConfigure' || name === 'indentDefaultConfigure'){
-           if(new_arr[7000]){
-             for(let i=0; i<new_arr[7000].length; i++){
-               if(new_arr[7000][i] === '7003'){
-                 permission_val = 7003
-               }
-             }
-
-             if(permission_val === 7003){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'countConfigure'){
-           if(new_arr[7000]){
-             for(let i=0; i<new_arr[7000].length; i++){
-               if(new_arr[7000][i] === '7004'){
-                 permission_val = 7004
-               }
-             }
-
-             if(permission_val === 7004){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }else if(name === 'staffConfigure'){
-           if(new_arr[7000]){
-             for(let i=0; i<new_arr[7000].length; i++){
-               if(new_arr[7000][i] === '7005'){
-                 permission_val = 7005
-               }
-             }
-
-             if(permission_val === 7005){
-                this.$router.push({
-                  name,
-                  params,
-                  query
-                })
-             }else{
-                this.$Notice.warning({
-                    title: '嘀友提醒',
-                    desc: '暂无权限访问！'
-                });
-             }
-           }else{
-              this.$Notice.warning({
-                  title: '嘀友提醒',
-                  desc: '暂无权限访问！'
-              });
-           }
-         }
-         
-       }
-      
+      this.$router.push({
+        name,
+        params,
+        query
+      })
     },
     handleCloseTag (res, type, route) {
-      
-      if (type !== 'others') {
-        if (type === 'all') {
-          this.turnToPage(this.$config.homeName);
-          this.hideSider({
-            siderShowType:false,
-            menuName:"1"
-          });
-          this.setMenuName('1')
-        } else {
-          if (routeEqual(this.$route, route)) {
-            this.closeTag(route)
+        if (type !== 'others') {
+          if (type === 'all') {
+            this.turnToPage(this.$config.homeName);
+            this.hideSider({
+              siderShowType:false,
+              menuName:"1"
+            });
+            this.setMenuName('1')
+          } else {
+            if (routeEqual(this.$route, route)) {
+              this.closeTag(route)
+            }
           }
         }
-      }
-
+      
       this.setTagNavList(res)
     },
     handleClick (item) {
@@ -659,6 +220,24 @@ export default {
           siderShowType:true,
           menuName:"6"
         })
+      }else if(item.meta.menuType === 7){
+        this.setMenuName('7')
+        this.hideSider({
+          siderShowType:true,
+          menuName:"7"
+        })
+      }else if(item.meta.menuType === 8){
+        this.setMenuName('8')
+        this.hideSider({
+          siderShowType:true,
+          menuName:"8"
+        })
+      }else if(item.meta.menuType === 9){
+        this.setMenuName('9')
+        this.hideSider({
+          siderShowType:true,
+          menuName:"9"
+        })
       }
     },
     changeManage (name){
@@ -670,41 +249,61 @@ export default {
           menuName:"1"
         });
       }else if(parseInt(name) === 2){
+        this.$router.push({name:'driverManage'});
         this.hideSider({
           siderShowType:true,
           menuName:"2"
         })
         this.setAccess(['leagueCheck'])
       }else if(parseInt(name) === 3){
+        this.$router.push({name:'indentManage'});
         this.hideSider({
           siderShowType:true,
           menuName:"3"
         })
         this.setAccess(['indentCheck'])
       }else if(parseInt(name) === 4){
+        this.$router.push({name:'countList'});
         this.hideSider({
           siderShowType:true,
           menuName:"4"
         })
         this.setAccess(['countCheck'])
       }else if(parseInt(name) === 5){
+        this.$router.push({name:'vehicleList'});
         this.hideSider({
           siderShowType:true,
           menuName:"5"
         })
         this.setAccess(['vehicleCheck'])
       }else if(parseInt(name) === 6){
+        this.$router.push({name:'customerList'});
         this.hideSider({
           siderShowType:true,
           menuName:"6"
         })
         this.setAccess(['customerCheck'])
       }else if(parseInt(name) === 7){
+        this.$router.push({name:'companyInfo'});
         this.hideSider({
           siderShowType:true,
           menuName:"7"
         })
         this.setAccess(['configureCheck'])
+      }else if(parseInt(name) === 8){
+        this.$router.push({name:'merchantInfo'});
+        this.hideSider({
+          siderShowType:true,
+          menuName:"8"
+        })
+        this.setAccess(['merchantCheck'])
+      }else if(parseInt(name) === 9){
+        this.$router.push({name:'merchantIndentList'});
+        this.hideSider({
+          siderShowType:true,
+          menuName:"9"
+        })
+        this.setAccess(['merchantIndentCheck'])
       }
     }
   },
@@ -724,6 +323,10 @@ export default {
     /**
      * @description 初始化设置面包屑导航和标签导航
      */
+
+    this.company_log = window.localStorage.getItem("izuxbcniushdfdebfud_logo");
+    this.plat_name = window.localStorage.getItem("izuxbcniushdfdebfud_platform");
+
     this.setTagNavList()
     this.setHomeRoute(routers)
     this.addTag({
@@ -732,9 +335,9 @@ export default {
     this.setBreadCrumb(this.$route)
     // 如果当前打开页面不在标签栏中，跳到homeName页
     if (!this.tagNavList.find(item => item.name === this.$route.name)) {
-      this.$router.push({
-        name: this.$config.homeName
-      })
+        this.$router.push({
+          name: this.$config.homeName
+        })
     }
 
     if(window.localStorage.getItem('SiderShow')){
@@ -745,41 +348,50 @@ export default {
       this.app.topMenuName = window.localStorage.getItem('MenuName')
     }
 
-    let new_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
+    if(parseInt(window.localStorage.getItem("ueiwrhifjbidfdasnf_type")) !== 3){
+      this.driver_versions = true;
+      this.merchant_versions = false;
 
-    if(new_arr[0] === '9999'){
-      this.driver_show = true;
-      this.indent_show = true;
-      this.count_show = true;
-      this.car_show = true;
-      this.cus_show = true;
-      this.configure_show = true;
-    }else{
+      let new_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
 
-      if(new_arr[2000]){
+      if(new_arr[0] === '9999'){
         this.driver_show = true;
-      }
-
-      if(new_arr[5000]){
         this.indent_show = true;
-      }
-
-      if(new_arr[6000]){
         this.count_show = true;
-      }
-
-      if(new_arr[3000]){
         this.car_show = true;
-      }
-
-      if(new_arr[1000]){
         this.cus_show = true;
-      }
-
-      if(new_arr[7000]){
         this.configure_show = true;
+      }else{
+
+        if(new_arr[2000]){
+          this.driver_show = true;
+        }
+
+        if(new_arr[5000]){
+          this.indent_show = true;
+        }
+
+        if(new_arr[6000]){
+          this.count_show = true;
+        }
+
+        if(new_arr[3000]){
+          this.car_show = true;
+        }
+
+        if(new_arr[1000]){
+          this.cus_show = true;
+        }
+
+        if(new_arr[7000]){
+          this.configure_show = true;
+        }
+
       }
 
+    }else{
+      this.driver_versions = false;
+      this.merchant_versions = true;
     }
     
   },

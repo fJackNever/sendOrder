@@ -65,9 +65,19 @@ export default {
           // commit('setAvator', data.avator)
           // commit('setUserName', data.name)
           // commit('setUserId', data.user_id)
-          window.localStorage.setItem("ueiwrhifjbidfdasnf_companyId",res.data.data.company_id);
-          window.localStorage.setItem("izuxbcniushdfdebfud_userName",res.data.data.name);
-          window.localStorage.setItem("izuxbcniushdfdebfud_permission",res.data.data.permission);
+          window.localStorage.setItem("ueiwrhifjbidfdasnf_type",res.data.data.type);
+          if(res.data.data.type !== 3){
+            window.localStorage.setItem("ueiwrhifjbidfdasnf_companyId",res.data.data.company_id);
+            window.localStorage.setItem("izuxbcniushdfdebfud_userName",res.data.data.name);
+            window.localStorage.setItem("izuxbcniushdfdebfud_permission",res.data.data.permission);
+            window.localStorage.setItem("izuxbcniushdfdebfud_logo",res.data.data.logo_path || '');
+            window.localStorage.setItem("izuxbcniushdfdebfud_platform",res.data.data.plat_name || '');
+          }else{
+            window.localStorage.setItem("ueiwrhifjbidfdasnf_companyId",res.data.data.company_id);
+            window.localStorage.setItem("izuxbcniushdfdebfud_userName",res.data.data.name);
+            window.localStorage.setItem("izuxbcniushdfdebfud_logo",res.data.data.logo_path || '');
+            window.localStorage.setItem("izuxbcniushdfdebfud_platform",res.data.data.plat_name || '');
+          }
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -78,7 +88,23 @@ export default {
     handleLogOut ({ state, commit }) {
       return new Promise((resolve, reject) => {
         logout().then(() => {
-          window.localStorage.clear();
+          if(parseInt(window.localStorage.getItem('ueiwrhifjbidfdasnf_type')) !== 3){
+            window.localStorage.removeItem('ueiwrhifjbidfdasnf_companyId')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_userName')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_permission')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_logo')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_platform')
+            window.localStorage.removeItem('SiderShow')
+            window.localStorage.removeItem('MenuName')
+          }else{
+            window.localStorage.removeItem('ueiwrhifjbidfdasnf_companyId')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_userName')
+            window.localStorage.removeItem('SiderShow')
+            window.localStorage.removeItem('MenuName')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_logo')
+            window.localStorage.removeItem('izuxbcniushdfdebfud_platform')
+          }
+          
           resolve()
         }).catch(err => {
           reject(err)

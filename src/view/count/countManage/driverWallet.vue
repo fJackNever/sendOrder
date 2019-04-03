@@ -25,8 +25,8 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="get_pay_record(row.driver_id)">收支记录</Button>
-                <Button type="success" style="margin-right: 5px" @click="penalty_award(row.driver_id,1)">奖励</Button>
+                <Button type="primary" style="margin-right: 10px" @click="get_pay_record(row.driver_id)">收支记录</Button>
+                <Button type="success" style="margin-right: 10px" @click="penalty_award(row.driver_id,1)">奖励</Button>
                 <Button type="error" @click="penalty_award(row.driver_id,2)">罚款</Button>
             </template>
         </Table>
@@ -84,7 +84,8 @@ export default {
       order_columns: [
             {
                 title: '司机姓名',
-                key: 'driver_name'
+                key: 'driver_name',
+                width:100,
             },
             {
                 title: '司机手机号',
@@ -156,7 +157,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 250,
+                width: 280,
                 align: 'center'
             }
         ],
@@ -203,11 +204,20 @@ export default {
     },
     find_indent(){
         this.getDriverAmountLists({ driver_id:'',id_name:this.driverName,telephone:this.driverPhone,offset:0,limit:10 }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     get_pay_record(index){
@@ -369,31 +379,64 @@ export default {
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getSettleHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:data.data.data.total_driver,em:true})
-        this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
-        this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:data.data.data.total_driver,em:true})
+            this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
+            this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:0,em:false})
+        }
     })
 
     this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   },
   activated () {
     this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getSettleHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:data.data.data.total_driver,em:true})
-        this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
-        this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:data.data.data.total_driver,em:true})
+            this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:data.data.data.unsettle_amount/100,em:true})
+            this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:data.data.data.settled_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'所有司机',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'未结算金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,2,{ title:'已结算金额',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getDriverAmountLists({ driver_id:'',id_name:'',telephone:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
   }
 }

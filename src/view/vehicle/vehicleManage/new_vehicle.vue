@@ -135,7 +135,7 @@ export default {
     return {
       cardTitle:'添加车辆',
       formValidate: {
-          status:0,
+          status:1,
       },
       visible:false,
       driveList:[],
@@ -268,6 +268,9 @@ export default {
     },
   },
   mounted () {
+      if(this.$route.query.type === 'new'){
+          this.$refs['formValidate'].resetFields();
+      }
         this.getCarTemplateLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.brandModelArr,i,data.data.data.rows[i])
@@ -275,6 +278,9 @@ export default {
         })
   },
   activated () {
+      if(this.$route.query.type === 'new'){
+          this.$refs['formValidate'].resetFields();
+      }
         this.getCarTemplateLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.brandModelArr,i,data.data.data.rows[i])

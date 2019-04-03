@@ -36,19 +36,19 @@
                     </Modal>
 
                     <FormItem label="车牌号" prop="licensePlateNum">
-                        <Input v-model="formValidate.licensePlateNum" placeholder="请输入车牌号" style="width:200px"></Input>
+                        <Input v-model="formValidate.licensePlateNum" placeholder="请输入车牌号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="所有人" prop="owner">
-                        <Input v-model="formValidate.owner" placeholder="请输入所有人" style="width:200px"></Input>
+                        <Input v-model="formValidate.owner" placeholder="请输入所有人" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="车架号" prop="Vin" >
-                        <Input v-model="formValidate.Vin" placeholder="请输入车架号" style="width:200px"></Input>
+                        <Input v-model="formValidate.Vin" placeholder="请输入车架号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="发动机号" prop="engineNum">
-                        <Input v-model="formValidate.engineNum" placeholder="请输入发动机号" style="width:200px"></Input>
+                        <Input v-model="formValidate.engineNum" placeholder="请输入发动机号" style="width:200px" disabled></Input>
                     </FormItem>
 
                 </Form>
@@ -77,17 +77,17 @@
                     </FormItem>
 
                     <FormItem label="注册日期" prop="registerDate">
-                        <DatePicker type="date" placeholder="注册日期" v-model="formValidate.registerDate" style="width:200px"></DatePicker>
+                        <DatePicker type="date" placeholder="注册日期" v-model="formValidate.registerDate" style="width:200px" disabled></DatePicker>
                     </FormItem>
 
                     <FormItem label="品牌车型" prop="brandModel">
-                        <Select v-model="formValidate.brandModel" placeholder="请选择品牌车型" style="width:200px">
+                        <Select v-model="formValidate.brandModel" placeholder="请选择品牌车型" style="width:200px" disabled>
                             <Option v-for="(item, index) in brandModelArr" :value="item.id" :key="index">{{ item.brand + '-' + item.model }}</Option>
                         </Select>
                     </FormItem>
 
                     <FormItem label="车身颜色" prop="carColor">
-                        <Input v-model="formValidate.carColor" placeholder="请输入车身颜色" style="width:200px"></Input>
+                        <Input v-model="formValidate.carColor" placeholder="请输入车身颜色" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem>
@@ -368,6 +368,7 @@ export default {
       brandModelArr:[],
       inputDriverShake:'',
       driverId:'',
+      permission_arr:'',
     }
   },
   methods: {
@@ -384,7 +385,7 @@ export default {
         this.visible = true;
     },
     handleUnbind(){
-
+        let per_val = '';
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[3000].length; i++){
                 if(this.permission_arr[3000][i] === '3009'){
@@ -436,8 +437,7 @@ export default {
         
     },
     handleBind(){
-        
-
+        let per_val = '';
         if(this.permission_arr[0] !== '9999'){
             for(let i=0; i<this.permission_arr[3000].length; i++){
                 if(this.permission_arr[3000][i] === '3008'){
@@ -551,6 +551,7 @@ export default {
     },
   },
   mounted () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCarTemplateLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.brandModelArr,i,data.data.data.rows[i])
@@ -613,6 +614,7 @@ export default {
         })
   },
   activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getCarTemplateLists({ id:'',status:1,use_car_type_id:'',search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
                 this.$set(this.brandModelArr,i,data.data.data.rows[i])

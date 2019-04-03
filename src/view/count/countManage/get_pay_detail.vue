@@ -118,6 +118,7 @@ export default {
         modalTitle:'司机罚款',
         labelTitle:'罚款金额',
         driverId:'',
+        permission_arr:'',
     }
   },
   methods: {
@@ -236,17 +237,71 @@ export default {
         }
     },
     penalty_award(index,type){
-        this.visible = true;
-        this.penalty_award_id = index;
-        this.$refs['formValidate'].resetFields();
+        let per_val = '' 
+        
         if(type === 1){
-            this.penalty_award_type = 1;
-            this.modalTitle = '司机奖励';
-            this.labelTitle = '奖励金额';
+
+            let per_val = ''
+            if(this.permission_arr[0] !== '9999'){
+                for(let i=0; i<this.permission_arr[6000].length; i++){
+                    if(this.permission_arr[6000][i] === '6012'){
+                        per_val = 6012
+                    }
+                }
+                if(per_val === 6012){
+                    this.visible = true;
+                    this.penalty_award_id = index;
+                    this.$refs['formValidate'].resetFields();
+                    this.penalty_award_type = 1;
+                    this.modalTitle = '司机奖励';
+                    this.labelTitle = '奖励金额';
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '暂无权限访问！'
+                    });
+                }
+            }else{
+                this.visible = true;
+                this.penalty_award_id = index;
+                this.$refs['formValidate'].resetFields();
+                this.penalty_award_type = 1;
+                this.modalTitle = '司机奖励';
+                this.labelTitle = '奖励金额';
+            }
+
+            
         }else{
-            this.penalty_award_type = 2;
-            this.modalTitle = '司机罚款';
-            this.labelTitle = '罚款金额';
+
+            let per_val = ''
+            if(this.permission_arr[0] !== '9999'){
+                for(let i=0; i<this.permission_arr[6000].length; i++){
+                    if(this.permission_arr[6000][i] === '6011'){
+                        per_val = 6011
+                    }
+                }
+                if(per_val === 6011){
+                    this.visible = true;
+                    this.penalty_award_id = index;
+                    this.$refs['formValidate'].resetFields();
+                    this.penalty_award_type = 2;
+                    this.modalTitle = '司机罚款';
+                    this.labelTitle = '罚款金额';
+                }else{
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: '暂无权限访问！'
+                    });
+                }
+            }else{
+                this.visible = true;
+                this.penalty_award_id = index;
+                this.$refs['formValidate'].resetFields();
+               this.penalty_award_type = 2;
+                this.modalTitle = '司机罚款';
+                this.labelTitle = '罚款金额';
+            }
+
         }
     },
     handleSubmit(name){
@@ -256,7 +311,7 @@ export default {
                     this.rewardDriver({ 
                         driver_id:this.$route.query.id,
                         amount: this.formValidate.penalty_award_price * 100,
-                        body:this.formValidate.desc
+                        body:this.formValidate.desc || ''
                     }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('奖励成功!');
@@ -284,7 +339,7 @@ export default {
                     this.fineDriver({ 
                         driver_id:this.$route.query.id,
                         amount: this.formValidate.penalty_award_price * 100,
-                        body:this.formValidate.desc
+                        body:this.formValidate.desc || ''
                      }).then((data) => {
                         if(data.data.code === 1){
                             this.$Message.success('罚款成功!');
@@ -335,6 +390,7 @@ export default {
     },
   },
   mounted () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.get_pay_type = -1;
     this.get_pay_record = 1;
     this.driverId = this.$route.query.id;
@@ -346,6 +402,7 @@ export default {
     })
   },
   activated () {
+      this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.citySelected = -1;
     this.indentStatus = -1;
     this.driverId = this.$route.query.id;

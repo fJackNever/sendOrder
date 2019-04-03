@@ -34,6 +34,7 @@ import {
   editFleet,
   getOrderLists,
   getOrderHost,
+  getWorkReminder,
   cancelOrder,
   getOrderDriverLists,
   getOrderInfo,
@@ -54,7 +55,9 @@ import {
   preDriverSettle,
   driverSettle,
   getDriverReconciliayionLists,
+  delDriverReconciliation,
   createDriverReconciliation,
+  getDriverId,
   getDriverAmountLists,
   rewardDriver,
   fineDriver,
@@ -66,8 +69,10 @@ import {
   getCutsomerReconciliationHost,
   createCustomerReconciliation,
   getCustomerReconciliayionLists,
+  payCustomerReconciliation,
   confirmCustomerReconciliation,
   delCustomerReconciliation,
+  getCustomerId,
   getFinanceHost,
   getFinanceLists,
   getCarLists,
@@ -84,6 +89,7 @@ import {
   delCustomer,
   getCompanyBaseConfig,
   setCompanyBaseConfig,
+  getDriverRegisterUrl,
   getLngLat,
   changeLngLat,
   addCompanyCity,
@@ -114,6 +120,10 @@ import {
   editAdminUserNoPwd,
   getAdminUserLists,
   getAdminUserHost,
+  getCustomerInfo,
+  setCustomer,
+  getChangeCustomerPassword,
+  getOrderDescription,
 } from '@/api/data'
 import router from '@/router'
 import routers from '@/router/routers'
@@ -366,9 +376,9 @@ export default {
         })
       })
     },
-    getCanJoinFleetDriverLists({ commit }, { search,offset,limit }){
+    getCanJoinFleetDriverLists({ commit }, { id,search,offset,limit }){
       return new Promise((resolve, reject) => {
-        getCanJoinFleetDriverLists({ search,offset,limit }).then(res => {
+        getCanJoinFleetDriverLists({ id,search,offset,limit }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -412,6 +422,15 @@ export default {
         })
       })
     },
+    getWorkReminder({ commit }){
+      return new Promise((resolve, reject) => {
+        getWorkReminder().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
     getOrderLists({ commit }, { id,entity_id,customer_id,city_id,use_car_type_id,status,other_status,start_start_time,start_end_time,create_start_time,create_end_time,driver_name,customer_name,passenger_tel,offset,limit }){
       return new Promise((resolve, reject) => {
         getOrderLists({ id,entity_id,customer_id,city_id,use_car_type_id,status,other_status,start_start_time,start_end_time,create_start_time,create_end_time,driver_name,customer_name,passenger_tel,offset,limit }).then(res => {
@@ -430,9 +449,9 @@ export default {
         })
       })
     },
-    getOrderDriverLists({ commit }, { order_id }){
+    getOrderDriverLists({ commit }, { order_id,key_words,car_color }){
       return new Promise((resolve, reject) => {
-        getOrderDriverLists({ order_id }).then(res => {
+        getOrderDriverLists({ order_id,key_words,car_color  }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -605,9 +624,27 @@ export default {
         })
       })
     },
+    delDriverReconciliation({ commit },{ id }){
+      return new Promise((resolve, reject) => {
+        delDriverReconciliation({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
     createDriverReconciliation({ commit },{ driver_id,start_date,end_date }){
       return new Promise((resolve, reject) => {
         createDriverReconciliation({ driver_id,start_date,end_date }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getDriverId({ commit },{ name,telephone }){
+      return new Promise((resolve, reject) => {
+        getDriverId({ name,telephone }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -716,6 +753,15 @@ export default {
         })
       })
     },
+    payCustomerReconciliation({ commit }, { id }){
+      return new Promise((resolve, reject) => {
+        payCustomerReconciliation({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
     confirmCustomerReconciliation({ commit }, { id }){
       return new Promise((resolve, reject) => {
         confirmCustomerReconciliation({ id }).then(res => {
@@ -728,6 +774,15 @@ export default {
     delCustomerReconciliation({ commit }, { id }){
       return new Promise((resolve, reject) => {
         delCustomerReconciliation({ id }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getCustomerId({ commit }, { name,telephone }){
+      return new Promise((resolve, reject) => {
+        getCustomerId({ name,telephone }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -827,9 +882,9 @@ export default {
         })
       })
     },
-    addCustomer({ commit }, { status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }){
+    addCustomer({ commit }, { status,type,name,telephone,address,comment,contact,email,bussiness_path,other_img_path }){
       return new Promise((resolve, reject) => {
-        addCustomer({ status,type,name,telephone,address,comment,amount,contact,email,bussiness_path,other_img_path }).then(res => {
+        addCustomer({ status,type,name,telephone,address,comment,contact,email,bussiness_path,other_img_path }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -873,9 +928,18 @@ export default {
         })
       })
     },
-    setCompanyBaseConfig({ commit }, { company_name,telephone,address,address_location,bussiness_path,introduction }){
+    setCompanyBaseConfig({ commit }, { company_name,telephone,address,address_location,bussiness_path,introduction,service_tel }){
       return new Promise((resolve, reject) => {
-        setCompanyBaseConfig({ company_name,telephone,address,address_location,bussiness_path,introduction }).then(res => {
+        setCompanyBaseConfig({ company_name,telephone,address,address_location,bussiness_path,introduction,service_tel }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getDriverRegisterUrl({ commit }){
+      return new Promise((resolve, reject) => {
+        getDriverRegisterUrl().then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -1023,9 +1087,9 @@ export default {
       })
     },
     //订单基础配置
-    setCompanyOrderBaseConfig({ commit }, { pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time }){
+    setCompanyOrderBaseConfig({ commit }, { pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time,order_amount_show,order_notice }){
       return new Promise((resolve, reject) => {
-        setCompanyOrderBaseConfig({ pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time }).then(res => {
+        setCompanyOrderBaseConfig({ pre_create_order_limit_time,pre_create_order_time,create_order_start_time,create_order_end_time,create_order_notice,is_auto_change_order,create_order_notice_time,auto_change_order_time,order_wait_limit_time,driver_mess_order_notice,distance_order_start_time,is_allow_driver_change_order,can_change_order_time,order_amount_show,order_notice }).then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)
@@ -1164,6 +1228,42 @@ export default {
     getAdminUserHost({ commit }){
       return new Promise((resolve, reject) => {
         getAdminUserHost().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getCustomerInfo({ commit }){
+      return new Promise((resolve, reject) => {
+        getCustomerInfo().then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    setCustomer({ commit }, { name,type,telephone,address,contact,email,bussiness_path,other_img_path }){
+      return new Promise((resolve, reject) => {
+        setCustomer({ name,type,telephone,address,contact,email,bussiness_path,other_img_path }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getChangeCustomerPassword({ commit }, { password }){
+      return new Promise((resolve, reject) => {
+        getChangeCustomerPassword({ password }).then(res => {
+          resolve(res)
+        }).catch(err => {
+          reject(err)
+        })
+      })
+    },
+    getOrderDescription({ commit }){
+      return new Promise((resolve, reject) => {
+        getOrderDescription().then(res => {
           resolve(res)
         }).catch(err => {
           reject(err)

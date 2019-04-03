@@ -30,11 +30,11 @@
                 <strong>{{ row.name }}</strong>
             </template>
             <template slot-scope="{ row, index }" slot="action">
-                <Button type="primary" style="margin-right: 5px" @click="edit_indent(row.in_out_id)">详情</Button>
-                <Button type="error" style="margin-right: 5px" @click="withdraw_deal_bank(row.in_out_id,row.withdraw_type,row.withdraw_name,row.account_no,row.account_name,row.amount/100,row.withdraw_comment,row.withdraw_img_path)" v-if="row.withdraw_status === 0 && row.withdraw_type === 1">提现处理</Button>
-                <Button type="error" style="margin-right: 5px" @click="withdraw_deal_ali(row.in_out_id,row.withdraw_type,row.account_no,row.withdraw_name,row.amount/100,row.withdraw_comment,row.withdraw_img_path)" v-if="row.withdraw_status === 0 && row.withdraw_type === 2">提现处理</Button>
-                <Button type="error" style="margin-right: 5px" disabled v-if="row.withdraw_status === 1">已提现</Button>
-                <Button type="error" style="margin-right: 5px" v-if="row.withdraw_status === 0" @click="reject_withdraw(row.in_out_id)">驳回</Button>
+                <Button type="primary" style="margin-right: 10px" @click="edit_indent(row.in_out_id)">详情</Button>
+                <Button type="error" style="margin-right: 10px" @click="withdraw_deal_bank(row.in_out_id,row.withdraw_type,row.withdraw_name,row.account_no,row.account_name,row.amount/100,row.withdraw_comment,row.withdraw_img_path)" v-if="row.withdraw_status === 0 && row.withdraw_type === 1">提现处理</Button>
+                <Button type="error" style="margin-right: 10px" @click="withdraw_deal_ali(row.in_out_id,row.withdraw_type,row.account_no,row.withdraw_name,row.amount/100,row.withdraw_comment,row.withdraw_img_path)" v-if="row.withdraw_status === 0 && row.withdraw_type === 2">提现处理</Button>
+                <Button type="error" style="margin-right: 10px" disabled v-if="row.withdraw_status === 1">已提现</Button>
+                <Button type="error" v-if="row.withdraw_status === 0" @click="reject_withdraw(row.in_out_id)">驳回</Button>
             </template>
         </Table>
         <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
@@ -170,7 +170,8 @@ export default {
             },
             {
                 title: '提现司机',
-                key: 'driver_name'
+                key: 'driver_name',
+                width:100,
             },
             {
                 title: '司机手机号',
@@ -206,7 +207,7 @@ export default {
             {
                 title: '操作',
                 slot: 'action',
-                width: 280,
+                width: 310,
                 align: 'center'
             }
         ],
@@ -248,35 +249,71 @@ export default {
     updateTable(index){
         if(index === 0){
             this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:0,id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 1){
             this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:1,id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 2){
             this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:0,id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }else if(index === 3){
             this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:1,id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = [];
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
+                if(data.data.code === 1){
+                    this.order_data = [];
+                    for(let i=0; i<data.data.data.rows.length; i++){
+                        this.$set(this.order_data,i,data.data.data.rows[i])
+                    }
+                    this.pageTotal = data.data.data.total;
+                }else{
+                    this.order_data = [];
+                    this.pageTotal = 0;
+                    this.$Notice.warning({
+                        title: '嘀友提醒',
+                        desc: data.data.msg
+                    });
                 }
-                this.pageTotal = data.data.data.total
             })
         }
     },
@@ -293,11 +330,20 @@ export default {
         this.driverName = '';
         this.driverPhone = '';
         this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:'',id_name:'',telephone:'',start_time:date[0],end_time:date[1],offset:0,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     searchName(value){
@@ -319,11 +365,20 @@ export default {
     },
     find_indent(){
         this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:'',id_name:this.driverName,telephone:this.driverPhone,start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     edit_indent(index){
@@ -520,11 +575,20 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:'',id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:size }).then((data) => {
-            this.order_data = [];
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     handleSubmit(name){
@@ -576,7 +640,7 @@ export default {
 
                     this.rejectDriverWithdraw({ 
                         id:this.get_pay_id,
-                        withdraw_comment:this.formValidate.desc || '',
+                        withdraw_comment:this.formRejectValidate.rejectDesc || '',
                         withdraw_img_path:rejectPic,
                      }).then((data) => {
                         if(data.data.code === 1){
@@ -610,36 +674,71 @@ export default {
   mounted () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getDriverWithdrawHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'待提现数',colSpan:3,value:data.data.data.unwithdraw_count,em:true})
-        this.$set(this.countHostData,1,{ title:'已提现数',colSpan:3,value:data.data.data.withdrawed_count,em:true})
-        this.$set(this.countHostData,2,{ title:'待提现金额',colSpan:3,value:data.data.data.unwithdraw_amount/100,em:true})
-        this.$set(this.countHostData,3,{ title:'已提现金额',colSpan:3,value:data.data.data.withdrawed_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'待提现数',colSpan:3,value:data.data.data.unwithdraw_count,em:true})
+            this.$set(this.countHostData,1,{ title:'已提现数',colSpan:3,value:data.data.data.withdrawed_count,em:true})
+            this.$set(this.countHostData,2,{ title:'待提现金额',colSpan:3,value:data.data.data.unwithdraw_amount/100,em:true})
+            this.$set(this.countHostData,3,{ title:'已提现金额',colSpan:3,value:data.data.data.withdrawed_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'待提现数',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'已提现数',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,2,{ title:'待提现金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,3,{ title:'已提现金额',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:'',id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   },
   activated () {
       this.permission_arr = JSON.parse(window.localStorage.getItem("izuxbcniushdfdebfud_permission"))
     this.getDriverWithdrawHost().then((data) => {
-        this.$set(this.countHostData,0,{ title:'待提现数',colSpan:3,value:data.data.data.unwithdraw_count,em:true})
-        this.$set(this.countHostData,1,{ title:'已提现数',colSpan:3,value:data.data.data.withdrawed_count,em:true})
-        this.$set(this.countHostData,2,{ title:'待提现金额',colSpan:3,value:data.data.data.unwithdraw_amount/100,em:true})
-        this.$set(this.countHostData,3,{ title:'已提现金额',colSpan:3,value:data.data.data.withdrawed_amount/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.countHostData,0,{ title:'待提现数',colSpan:3,value:data.data.data.unwithdraw_count,em:true})
+            this.$set(this.countHostData,1,{ title:'已提现数',colSpan:3,value:data.data.data.withdrawed_count,em:true})
+            this.$set(this.countHostData,2,{ title:'待提现金额',colSpan:3,value:data.data.data.unwithdraw_amount/100,em:true})
+            this.$set(this.countHostData,3,{ title:'已提现金额',colSpan:3,value:data.data.data.withdrawed_amount/100,em:false})
+        }else{
+            this.$set(this.countHostData,0,{ title:'待提现数',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,1,{ title:'已提现数',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,2,{ title:'待提现金额',colSpan:3,value:0,em:true})
+            this.$set(this.countHostData,3,{ title:'已提现金额',colSpan:3,value:0,em:false})
+        }
+        
     })
 
     this.getDriverWithdrawLists({ in_out_id:'',driver_id:'',withdraw_type:'',withdraw_status:'',id_name:'',telephone:'',start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
-
   }
 }
 </script>

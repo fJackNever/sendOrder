@@ -4,35 +4,35 @@
         <Row>
             <Col span="12">
                 <Form ref="formValidate" :model="formValidate" :label-width="80" >
-                    <FormItem label="客户状态" prop="status">
-                        <Select v-model="formValidate.status" placeholder="请选择客户状态" style="width:200px" :disabled="statusDis">
+                    <FormItem label="商家状态" prop="status">
+                        <Select v-model="formValidate.status" placeholder="请选择审核状态" style="width:200px" disabled>
                             <Option :value="0">待审核</Option>
                             <Option :value="1">审核通过</Option>
                             <Option :value="2">审核拒绝</Option>
                         </Select>
                     </FormItem>
 
-                    <FormItem label="客户类型" prop="cusType">
-                        <Select v-model="formValidate.cusType" placeholder="请选择客户类型" style="width:200px" :disabled="formDis">
+                    <FormItem label="类型" prop="type">
+                        <Select v-model="formValidate.type" placeholder="请选择审核状态" style="width:200px" >
                             <Option :value="1">公司</Option>
                             <Option :value="2">个人</Option>
                         </Select>
                     </FormItem>
 
-                    <FormItem label="客户名称" prop="cusName">
-                        <Input v-model="formValidate.cusName" placeholder="请输入客户名称" style="width:200px" :disabled="formDis"></Input>
+                    <FormItem label="商家名称" prop="name">
+                        <Input v-model="formValidate.name" placeholder="请输入商家名称" style="width:200px"></Input>
                     </FormItem>
 
-                    <FormItem label="客户手机号" prop="cusPhone">
-                        <Input v-model="formValidate.cusPhone" placeholder="请输入客户手机号" style="width:200px" :disabled="formDis"></Input>
+                    <FormItem label="商家电话" prop="phone">
+                        <Input v-model="formValidate.phone" placeholder="请输入商家电话" style="width:200px"></Input>
                     </FormItem>
 
-                    <FormItem label="客户地址" prop="address">
-                        <Input v-model="formValidate.address" placeholder="请输入客户地址" style="width:200px" :disabled="formDis"></Input>
+                    <FormItem label="商家地址" prop="address" >
+                        <Input v-model="formValidate.address" placeholder="请输入商家地址" style="width:200px"></Input>
                     </FormItem>
 
-                    <FormItem label="客户备注信息" prop="desc" :label-width="100" style="width:400px;">
-                        <Input v-model="formValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入客户备注信息" :disabled="formDis"></Input>
+                    <FormItem label="商家备注信息" prop="desc" :label-width="100" style="width:400px;">
+                        <Input v-model="formValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入商家备注信息" disabled></Input>
                     </FormItem>
 
                 </Form>
@@ -41,11 +41,11 @@
                 <Form ref="formValidate" :model="formValidate" :label-width="80" >
 
                     <FormItem label="联系人" prop="contactPer">
-                        <Input v-model="formValidate.contactPer" placeholder="请输入联系人" style="width:200px" :disabled="formDis"></Input>
+                        <Input v-model="formValidate.contactPer" placeholder="请输入联系人" style="width:200px" ></Input>
                     </FormItem>
 
                     <FormItem label="邮箱" prop="mailBox">
-                        <Input v-model="formValidate.mailBox" placeholder="请输入邮箱" style="width:200px" :disabled="formDis"></Input>
+                        <Input v-model="formValidate.mailBox" placeholder="请输入邮箱" style="width:200px" ></Input>
                     </FormItem>
 
                     <FormItem label="营业执照" prop="operationPic" >
@@ -98,21 +98,22 @@
                     </FormItem>
 
                     <FormItem>
-                        <Button type="primary" @click="handleSubmit('formValidate')">添加</Button>
+                        <Button type="primary" @click="handleSubmit('formValidate')">保存并提交</Button>
                     </FormItem>
-
                 </Form>
             </Col>
         </Row>
     </Card>
+
   </div>
 </template>
 
 <script>
-import { Row,Col,Card,Input,Button,DatePicker,Table,AutoComplete,Form,FormItem,Modal,Icon,InputNumber,Upload,Select,Option,RadioGroup,Radio, } from 'iview'
+import { Row,Col,Card,Input,Button,DatePicker,Table,AutoComplete,Form,FormItem,Modal,Icon,Upload,Select,Option,RadioGroup,Radio, } from 'iview'
 import { mapActions } from 'vuex'
+import moment from 'moment'
 export default {
-  name: 'new_customer',
+  name: 'merchantInfo',
   components: {
     Row,
     Col,
@@ -126,7 +127,6 @@ export default {
     FormItem,
     Modal,
     Icon,
-    InputNumber,
     Upload,
     Select,
     Option,
@@ -135,26 +135,26 @@ export default {
   },
   data () {
     return {
-      cardTitle:'添加客户',
-      statusDis:false,
-      formDis:false,
+      cardTitle:'商家信息',
       formValidate: {
-          cusType:1,
           status:0,
       },
-      ruleValidate: {},
       visible:false,
       operationList:[],
       otherList:[],
+      brandModelArr:[],
+      formDriverValidate:{},
     }
   },
   methods: {
     ...mapActions([
-      'addCustomer',
-      'editCustomer',
-      'authCustomerStatus',
       'uploadPic',
-      'getCustomerLists',
+      'getCarTemplateLists',
+      'addCar',
+      'editCar',
+      'getCarLists',
+      'getCustomerInfo',
+      'setCustomer'
     ]),
     handleView (url) {
         this.allPicModal = url;
@@ -218,38 +218,35 @@ export default {
         return check;
     },
     handleSubmit (name) {
-        let other_img_arr = [],other_img_url;
-        if(this.otherList && this.otherList.length > 0){
-            other_img_arr.push(this.otherList[0].ur)
-            other_img_url = JSON.stringify(other_img_arr)
-        }else{
-            other_img_url = ''
-        }
         
         this.$refs[name].validate((valid) => {
             if (valid) {
+
+                    let other_img_arr = [];
+                    if(this.otherList && this.otherList.length > 0){
+                        other_img_arr = JSON.stringify(other_img_arr.push(this.otherList[0].ur))
+                    }else{
+                        other_img_arr = ''
+                    }
+
                     let operationPic;
                     if(this.operationList && this.operationList.length>0){
                         operationPic = this.operationList[0].url
                     }else{
                         operationPic = ''
                     }
-                    this.addCustomer({ 
-                        status:this.formValidate.status,
-                        type:this.formValidate.cusType,
-                        name:this.formValidate.cusName || '',
-                        telephone:this.formValidate.cusPhone || '',
-                        address:this.formValidate.address || '',
-                        comment:this.formValidate.desc || '',
-                        contact:this.formValidate.contactPer || '',
-                        email:this.formValidate.mailBox || '',
+                    this.setCustomer({ 
+                        name:this.formValidate.name,
+                        type:this.formValidate.type,
+                        telephone:this.formValidate.phone,
+                        address:this.formValidate.address,
+                        contact:this.formValidate.contactPer,
+                        email:this.formValidate.mailBox,
                         bussiness_path:operationPic,
-                        other_img_path:other_img_url,
+                        other_img_path:other_img_arr,
                     }).then((data) => {
                         if(data.data.code === 1){
-                            this.$Message.success('新增成功!');
-                            this.$refs['formValidate'].resetFields();
-                            this.$router.push({ path:'customerList' });
+                            this.$Message.success('修改成功!');
                         }else{
                             this.$Notice.warning({
                                 title: '嘀友提醒',
@@ -264,16 +261,55 @@ export default {
     },
   },
   mounted () {
-        this.statusDis = false;
-        if(this.$route.query.type === 'new'){
-          this.$refs['formValidate'].resetFields();
-      }
+        this.getCustomerInfo().then((data) => {
+            
+            this.$set(this.formValidate,'status',data.data.data.status);
+            this.$set(this.formValidate,'type',data.data.data.type);
+            
+            this.$set(this.formValidate,'name',data.data.data.name);
+
+            this.$set(this.formValidate,'phone',data.data.data.telephone);
+            this.$set(this.formValidate,'address',data.data.data.address);
+
+            this.$set(this.formValidate,'desc',data.data.data.comment);
+            this.$set(this.formValidate,'contactPer',data.data.data.contact);
+
+            this.$set(this.formValidate,'mailBox',data.data.data.email);
+
+            if(data.data.data.bussiness_path){
+                this.$set(this.operationList,0,{ url:data.data.data.bussiness_path,name:'operationPic1' });
+            }
+
+            if(data.data.data.other_img_path && data.data.data.other_img_path.length>0){
+                this.$set(this.otherList,0,{ url:data.data.data.other_img_path[0],name:'otherPic1' });
+            }
+
+        })
   },
   activated () {
-        this.statusDis = false;
-        if(this.$route.query.type === 'new'){
-          this.$refs['formValidate'].resetFields();
-      }
+        this.getCustomerInfo().then((data) => {
+            
+            this.$set(this.formValidate,'status',data.data.data.status);
+            this.$set(this.formValidate,'type',data.data.data.type);
+            this.$set(this.formValidate,'name',data.data.data.name);
+
+            this.$set(this.formValidate,'phone',data.data.data.telephone);
+            this.$set(this.formValidate,'address',data.data.data.address);
+
+            this.$set(this.formValidate,'desc',data.data.data.comment);
+            this.$set(this.formValidate,'contactPer',data.data.data.contact);
+
+            this.$set(this.formValidate,'mailBox',data.data.data.email);
+
+            if(data.data.data.bussiness_path){
+                this.$set(this.operationList,0,{ url:data.data.data.bussiness_path,name:'operationPic1' });
+            }
+
+            if(data.data.data.other_img_path && data.data.data.other_img_path.length>0){
+                this.$set(this.otherList,0,{ url:data.data.data.other_img_path[0],name:'otherPic1' });
+            }
+
+        })
   }
 }
 </script>

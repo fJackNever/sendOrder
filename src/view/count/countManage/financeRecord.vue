@@ -1,8 +1,8 @@
 <template>
   <div style="padding:0 24px 24px;">
-    <topHost :itemCol="moneyHostData" :style="{ cursor:'pointer',marginBottom:'10px'}" ></topHost>
-    <topHost :itemCol="shouldHasHostData" :style="{ cursor:'pointer',marginBottom:'10px'}" ></topHost>
-    <topHost :itemCol="indentPlatformHostData" :style="{ cursor:'pointer'}" ></topHost>
+    <topHost :itemCol="moneyHostData" :style="{ marginBottom:'10px'}" ></topHost>
+    <topHost :itemCol="shouldHasHostData" :style="{ marginBottom:'10px'}" ></topHost>
+    <topHost :itemCol="indentPlatformHostData" ></topHost>
     <Card shadow style="margin-top:10px;">
 
         <span style="font-size:14px;padding-right:10px;">查询方式</span>
@@ -172,11 +172,20 @@ export default {
 
     changeDate(date){
         this.getFinanceLists({ start_time:date[0],end_time:date[1],offset:0,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
     changePage(page){
@@ -191,11 +200,20 @@ export default {
     changePageSize(size){
         this.pageSize = size;
         this.getFinanceLists({ start_time:'',end_time:'',offset:0,limit:size }).then((data) => {
-            this.order_data = [];
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
+            if(data.data.code === 1){
+                this.order_data = [];
+                for(let i=0; i<data.data.data.rows.length; i++){
+                    this.$set(this.order_data,i,data.data.data.rows[i])
+                }
+                this.pageTotal = data.data.data.total;
+            }else{
+                this.order_data = [];
+                this.pageTotal = 0;
+                this.$Notice.warning({
+                    title: '嘀友提醒',
+                    desc: data.data.msg
+                });
             }
-            this.pageTotal = data.data.data.total
         })
     },
   },
@@ -224,42 +242,79 @@ export default {
     })
 
     this.getFinanceLists({ start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   },
   activated () {
     this.check_way = 0;
     this.getFinanceHost().then((data) => {
-        this.$set(this.moneyHostData,0,{ title:'总收入',colSpan:3,value:data.data.data.total_get/100,em:true})
-        this.$set(this.moneyHostData,1,{ title:'总支出',colSpan:3,value:data.data.data.total_put/100,em:true})
-        this.$set(this.moneyHostData,2,{ title:'利润',colSpan:3,value:data.data.data.profit/100,em:false})
+        if(data.data.code === 1){
+            this.$set(this.moneyHostData,0,{ title:'总收入',colSpan:4,value:data.data.data.total_get/100,em:true})
+            this.$set(this.moneyHostData,1,{ title:'总支出',colSpan:4,value:data.data.data.total_put/100,em:true})
+            this.$set(this.moneyHostData,2,{ title:'利润',colSpan:4,value:data.data.data.profit/100,em:false})
 
-        this.$set(this.shouldHasHostData,0,{ title:'应收',colSpan:3,value:data.data.data.should_get/100,em:true})
-        this.$set(this.shouldHasHostData,1,{ title:'已收',colSpan:3,value:data.data.data.get/100,em:true})
-        this.$set(this.shouldHasHostData,2,{ title:'应付',colSpan:3,value:data.data.data.should_put/100,em:true})
-        this.$set(this.shouldHasHostData,3,{ title:'已付',colSpan:3,value:data.data.data.put/100,em:false})
-        
-        this.$set(this.indentPlatformHostData,0,{ title:'订单金额',colSpan:3,value:data.data.data.total_order/100,em:true})
-        this.$set(this.indentPlatformHostData,1,{ title:'订单司机结算金额',colSpan:3,value:data.data.data.total_driver/100,em:true})
-        this.$set(this.indentPlatformHostData,2,{ title:'平台费总金额',colSpan:3,value:data.data.data.total_plat/100,em:true})
-        if(data.data.data.plat.plat_amount_type === 1){
-            let new_num = data.data.data.plat.plat_amount/100
-            this.$set(this.indentPlatformHostData,3,{ title:'平台费',colSpan:3,value:new_num,em:false})
+            this.$set(this.shouldHasHostData,0,{ title:'应收',colSpan:4,value:data.data.data.should_get/100,em:true})
+            this.$set(this.shouldHasHostData,1,{ title:'已收',colSpan:4,value:data.data.data.get/100,em:true})
+            this.$set(this.shouldHasHostData,2,{ title:'应付',colSpan:4,value:data.data.data.should_put/100,em:true})
+            this.$set(this.shouldHasHostData,3,{ title:'已付',colSpan:4,value:data.data.data.put/100,em:false})
+            
+            this.$set(this.indentPlatformHostData,0,{ title:'订单金额',colSpan:4,value:data.data.data.total_order/100,em:true})
+            this.$set(this.indentPlatformHostData,1,{ title:'订单司机结算金额',colSpan:4,value:data.data.data.total_driver/100,em:true})
+            this.$set(this.indentPlatformHostData,2,{ title:'平台费总金额',colSpan:4,value:data.data.data.total_plat/100,em:true})
+            if(data.data.data.plat.plat_amount_type === 1){
+                let new_num = data.data.data.plat.plat_amount/100
+                this.$set(this.indentPlatformHostData,3,{ title:'平台费',colSpan:4,value:new_num,em:false})
+            }else{
+                let new_percent = data.data.data.plat.plat_amount + '%'
+                this.$set(this.indentPlatformHostData,3,{ title:'平台费',colSpan:4,value:new_percent,em:false})
+            }
         }else{
-            let new_percent = data.data.data.plat.plat_amount + '%'
-            this.$set(this.indentPlatformHostData,3,{ title:'平台费',colSpan:3,value:new_percent,em:false})
+            this.$set(this.moneyHostData,0,{ title:'总收入',colSpan:4,value:0,em:true})
+            this.$set(this.moneyHostData,1,{ title:'总支出',colSpan:4,value:0,em:true})
+            this.$set(this.moneyHostData,2,{ title:'利润',colSpan:4,value:0,em:false})
+
+            this.$set(this.shouldHasHostData,0,{ title:'应收',colSpan:4,value:0,em:true})
+            this.$set(this.shouldHasHostData,1,{ title:'已收',colSpan:4,value:0,em:true})
+            this.$set(this.shouldHasHostData,2,{ title:'应付',colSpan:4,value:0,em:true})
+            this.$set(this.shouldHasHostData,3,{ title:'已付',colSpan:4,value:0,em:false})
+            
+            this.$set(this.indentPlatformHostData,0,{ title:'订单金额',colSpan:4,value:0,em:true})
+            this.$set(this.indentPlatformHostData,1,{ title:'订单司机结算金额',colSpan:4,value:0,em:true})
+            this.$set(this.indentPlatformHostData,2,{ title:'平台费总金额',colSpan:4,value:0,em:true})
+                this.$set(this.indentPlatformHostData,3,{ title:'平台费',colSpan:4,value:0,em:false})
         }
+        
     })
 
     this.getFinanceLists({ start_time:'',end_time:'',offset:0,limit:10 }).then((data) => {
-        for(let i=0; i<data.data.data.rows.length; i++){
-            this.$set(this.order_data,i,data.data.data.rows[i])
+        if(data.data.code === 1){
+            this.order_data = [];
+            for(let i=0; i<data.data.data.rows.length; i++){
+                this.$set(this.order_data,i,data.data.data.rows[i])
+            }
+            this.pageTotal = data.data.data.total;
+        }else{
+            this.order_data = [];
+            this.pageTotal = 0;
+            this.$Notice.warning({
+                title: '嘀友提醒',
+                desc: data.data.msg
+            });
         }
-        this.pageTotal = data.data.data.total
     })
 
   }

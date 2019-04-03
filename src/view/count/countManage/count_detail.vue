@@ -1,37 +1,25 @@
 <template>
   <div style="padding:0 24px 24px;">
-        <Card shadow class="checkCard">
-            <div slot="title">
-                司机信息列表
-            </div>
-            <div slot="extra">
-                <AutoComplete
-                v-model="driverName"
-                @on-search="searchName"
-                @on-select="selectName"
-                placeholder="请输入司机姓名"
-                style="width:250px;margin-right:15px;" transfer>
-                    <Option v-for="(item,index) in driverGather" :value="item.id" :key="index" >{{ item.id_name }}</Option>
-                </AutoComplete>
-                <Button type="primary" @click="getAllDriver()">获取全部司机信息</Button>
-            </div>
-            <Table border :columns="order_columns" :data="order_data">
-                <template slot-scope="{ row }" slot="name">
-                    <strong>{{ row.name }}</strong>
-                </template>
-                <template slot-scope="{ row, index }" slot="action">
-                    <Button type="primary" style="margin-right: 5px" @click="selectAssigned(row.id)">选择指派</Button>
-                </template>
-            </Table>
-            <Page ref="Pagination" :total="pageTotal" show-sizer show-total @on-change="changePage" @on-page-size-change="changePageSize" style="margin-top:15px;"/>
-        </Card>
         <Card shadow class="indentCard" >
             <div slot="title" class="cardSlot">
                 <div style="width:200px;margin-top:6px;">{{cardTitle}}</div>
-                <Steps :current="2">
-                    <Step title="发单"></Step>
-                    <Step title="接单"></Step>
-                    <Step title="改派待处理"></Step>
+                <Steps :current="6" v-if="count_status === 1">
+                    <Step title="待处理"></Step>
+                    <Step title="待抢单"></Step>
+                    <Step title="已接单"></Step>
+                    <Step title="出发接乘客"></Step>
+                    <Step title="已接到乘客"></Step>
+                    <Step title="已完成"></Step>
+                    <Step title="已结算"></Step>
+                </Steps>
+                <Steps :current="6" v-if="count_status === 0">
+                    <Step title="待处理"></Step>
+                    <Step title="待抢单"></Step>
+                    <Step title="已接单"></Step>
+                    <Step title="出发接乘客"></Step>
+                    <Step title="已接到乘客"></Step>
+                    <Step title="已完成"></Step>
+                    <Step title="未结算"></Step>
                 </Steps>
             </div>
             <Row>
@@ -85,6 +73,10 @@
                             <InputNumber :min="0" v-model="formValidate.deiverPrice" disabled></InputNumber>
                         </FormItem>
 
+                        <FormItem label="结算备注" prop="driver_settle_comment" style="width:400px;">
+                            <Input v-model="formValidate.driver_settle_comment" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入结算备注" disabled></Input>
+                        </FormItem>
+
                     </Form>
                 </Col>
                 <Col span="12">
@@ -126,49 +118,11 @@
                         <FormItem label="注意事项" prop="desc" style="width:400px;">
                             <Input v-model="formValidate.desc" type="textarea" :autosize="{minRows: 2,maxRows: 5}" placeholder="请输入注意事项" disabled></Input>
                         </FormItem>
-                        <FormItem v-if="busyBtnShow">
-                            <Button type="primary" @click="becomeBusyIndent()">成为抢单</Button>
-                        </FormItem>
                     </Form>
                 </Col>
             </Row>
         </Card>
         
-        <Card shadow style="margin-top:30px;" >
-            <baidu-map class="bm-view" center="上海" ak="A1KbCD1wUrTDiAxu46BtmVhI" :zoom="10">
-                <bm-navigation anchor="BMAP_ANCHOR_TOP_RIGHT"></bm-navigation>
-                <bm-driving
-                    :start="indentStartAddress"
-                    :end="indentEndAddress"
-                    :auto-viewport="true"
-                    policy="BMAP_DRIVING_POLICY_LEAST_DISTANCE"
-                    :panel="false"
-                    :location="addressCity">
-                </bm-driving>
-                <!-- <bm-marker :position="{lng: 121.540749, lat: 31.159538}" title="三林世博家园b区" :icon="{url: driverLogo, size: {width: 35, height: 30}}"></bm-marker> -->
-            </baidu-map>
-        </Card>
-        <Modal 
-            title="是否成为抢单"
-            v-model="busyVisible" 
-            @on-ok="confirmBusy"
-            @on-cancel="cancelBusy"
-            ok-text="是"
-            cancel-text="否"
-            class="busyModal"
-        >
-        </Modal>
-        <Modal 
-            title="是否指派该司机"
-            v-model="sendVisible" 
-            @on-ok="confirmSend"
-            @on-cancel="cancelSend"
-            ok-text="是"
-            cancel-text="否"
-            class="busyModal"
-        >
-            
-        </Modal>
   </div>
 </template>
 
@@ -180,7 +134,7 @@ import { mapActions } from 'vuex'
 import driverLogo from '@/assets/images/driver.png'
 import fetchJsonp from 'fetch-jsonp'
 export default {
-  name: 'reassign_detail',
+  name: 'count_detail',
   components: {
     Row,
     Col,
@@ -218,43 +172,27 @@ export default {
       order_columns: [
             {
                 title: '司机姓名',
-                key: 'id_name'
+                key: 'driver_name'
             },
             {
                 title: '品牌车型',
-                key: 'binding_info',
-                render: (h, params) => {
-                    return h('div', [
-                        h('div',params.row.binding_info.brand_model),
-                    ]);
-                }
+                key: 'car_template',
             },
             {
                 title: '用车类型',
-                key: 'binding_info',
-                render: (h, params) => {
-                    return h('div', [
-                        h('div',params.row.binding_info.use_car_type_name),
-                    ]);
-                }
+                key: 'use_car_type_name',
             },
             {
                 title: '车身颜色',
-                key: 'binding_info',
-                render: (h, params) => {
-                    return h('div', [
-                        h('div',params.row.binding_info.car_color),
-                    ]);
-                }
+                key: 'car_color',
             },
             {
                 title: '操作',
                 slot: 'action',
-                width: 110,
+                width: 200,
                 align: 'center'
             }
       ],
-      order_data: [],
       formValidate: {
           indentType: '1',
           indentStartDate: '',
@@ -268,7 +206,9 @@ export default {
           passengerPhone: '',
       },
       cityArr:[],
-      ruleValidate: {},
+      ruleValidate: {
+
+      },
       busyVisible:false,
       sendVisible:false,
       pageTotal:0,
@@ -276,155 +216,36 @@ export default {
       pageCurrent:1,
       driverId:'',
       useCarArr:[],
-      minuteTime:'',
-      busyBtnShow:true,
       orderStatus:'',
       driveTime:'',
       driveDistance:'',
       driverLocation:'',
       passengerDistance:'',
       passengerTime:'',
-
-      addressCity:'',
-      indentStartAddress:'',
-      indentEndAddress:'',
+      first_show:true,
+      sec_show:true,
+      third_show:true,
+      fourth_show:true,
+      fifth_show:true,
+      sixth_show:true,
       start_location:'',
       end_location:'',
+      count_status:'',
     }
   },
   methods: {
     ...mapActions([
-      'getDriverLists',
+      'getOrderDriverLists',
       'getCompanyCityLists',
-      'getReassignApplyLists',
+      'getOrderLists',
       'getUseCarTypeLists',
       'getOrderInfo',
       'orderToDriver',
       'changeOrderToGrab',
+      'getSettleOrderLists',
     ]),
-    searchName(value){
-      if(this.inputNameShake) clearTimeout(this.inputNameShake)
-        this.inputNameShake = setTimeout(()=>{
-            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:value,telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.driverGather = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.driverGather,i,data.data.data.rows[i])
-                }
-            })
-        },600)
-    },
-    selectName(val){
-        this.getDriverLists({ id:val,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
-            this.driverName = data.data.data.rows[0].id_name
-            this.driverId = val;
-            this.order_data = []
-            this.$set(this.order_data,0,data.data.data.rows[0])
-            this.pageTotal = 1
-        })
-    },
-    getAllDriver(){
-        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-            this.pageTotal = data.data.data.total
-        })
-    },
-    changePage(page){
-        this.pageCurrent = page;
-        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:(page-1)*this.pageSize,limit:this.pageSize }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-        })
-    },
-    changePageSize(size){
-        this.pageSize = size;
-        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:size }).then((data) => {
-            this.order_data = []
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-            this.pageTotal = data.data.data.total
-        })
-    },
-    selectAssigned(id){
-        this.driver_id = id
-        this.sendVisible = true;
-    },
-    confirmSend(){
-        this.orderToDriver({ entity_id:this.order_entity_id,driver_id:this.driver_id }).then((data) => {
-            if(data.data.code === 1){
-                this.$Message.success('指派成功!');
-                this.sendVisible = false;
-            }
-        }).then(()=>{
-            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
-                }
-                this.pageTotal = data.data.data.total
-            })
-            
-            this.getOrderInfo({ order_id:this.$route.query.id }).then((data) => {
-                this.$set(this.formValidate,'driverName',data.data.data.driver_name || '');
-                this.$set(this.formValidate,'driverPhone',data.data.data.driver_telephone || '');
-                this.$set(this.formValidate,'carNum',data.data.data.car_no || '');
-                this.$set(this.formValidate,'brandModel',data.data.data.car_template || '');
-                this.$set(this.formValidate,'carType',data.data.data.use_car_type_name || '');
-                this.$set(this.formValidate,'carColor',data.data.data.car_color || '');
-          })
-
-        })
-        
-    },
-    cancelSend(){
-        this.sendVisible = false;
-    },
-    becomeBusyIndent(){
-        this.busyVisible = true;
-    },
-    confirmBusy(){
-        this.changeOrderToGrab({ entity_id:this.order_entity_id }).then((data) => {
-            if(data.data.code === 1){
-                this.$Message.success('设置成功!');
-                this.busyVisible = false;
-            }
-        }).then(()=>{
-            this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10 }).then((data) => {
-                this.order_data = []
-                for(let i=0; i<data.data.data.rows.length; i++){
-                    this.$set(this.order_data,i,data.data.data.rows[i])
-                }
-                this.pageTotal = data.data.data.total
-            })
-            
-            this.getOrderInfo({ order_id:this.$route.query.id }).then((data) => {
-                this.$set(this.formValidate,'driverName',data.data.data.driver_name || '');
-                this.$set(this.formValidate,'driverPhone',data.data.data.driver_telephone || '');
-                this.$set(this.formValidate,'carNum',data.data.data.car_no || '');
-                this.$set(this.formValidate,'brandModel',data.data.data.car_template || '');
-                this.$set(this.formValidate,'carType',data.data.data.use_car_type_name || '');
-                this.$set(this.formValidate,'carColor',data.data.data.car_color || '');
-          })
-
-        })
-    },
-    cancelBusy(){
-        this.busyVisible = false;
-    },
   },
   mounted () {
-          
-        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-            this.pageTotal = data.data.data.total
-        })
 
         this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
@@ -438,15 +259,14 @@ export default {
             }
         }).then(()=>{
 
-                this.getReassignApplyLists({ order_id:this.$route.query.id,order_entity_id:'',city_id:'',reassign_manage_status:'',start_time:'',end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                    this.order_entity_id = data.data.data.rows[0].entity_id;
+                this.getSettleOrderLists({ id:this.$route.query.id,order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
+
                     this.$set(this.formValidate,'indentType',data.data.data.rows[0].order_type);
                     this.$set(this.formValidate,'modelRequire',data.data.data.rows[0].use_car_type_id);
                     this.$set(this.formValidate,'indentStartDate',data.data.data.rows[0].start_date);
                     this.$set(this.formValidate,'indentStartTime',data.data.data.rows[0].start_time);
                     this.$set(this.formValidate,'indentCity',data.data.data.rows[0].city_id);
                     this.$set(this.formValidate,'cusName',data.data.data.rows[0].customer_name);
-                    this.cusId = data.data.data.rows[0].customer_id;
                     this.$set(this.formValidate,'startAddress',data.data.data.rows[0].start_address);
                     this.start_location = data.data.data.rows[0].start_location
                     this.$set(this.formValidate,'endAddress',data.data.data.rows[0].end_address);
@@ -456,38 +276,26 @@ export default {
                     this.$set(this.formValidate,'deiverPrice',data.data.data.rows[0].driver_amount/100);
                     this.$set(this.formValidate,'passengerName',data.data.data.rows[0].passenger_name);
                     this.$set(this.formValidate,'passengerPhone',data.data.data.rows[0].passenger_tel);
-                    this.$set(this.formValidate,'desc',data.data.data.rows[0].comment);
+                    this.$set(this.formValidate,'desc',data.data.data.rows[0].order_comment);
+                    this.$set(this.formValidate,'driver_settle_comment',data.data.data.rows[0].driver_settle_comment);
 
-                    this.addressCity = data.data.data.rows[0].city
-                    this.indentStartAddress = data.data.data.rows[0].start_address;
-                    this.indentEndAddress = data.data.data.rows[0].end_address;
+                    this.$set(this.formValidate,'driverName',data.data.data.rows[0].driver_name || '');
+                    this.$set(this.formValidate,'driverPhone',data.data.data.rows[0].driver_tel || '');
+                    this.$set(this.formValidate,'carNum',data.data.data.rows[0].car_no || '');
+                    this.$set(this.formValidate,'brandModel',data.data.data.rows[0].car_template || '');
+                    this.$set(this.formValidate,'carType',data.data.data.rows[0].car_template || '');
+                    this.$set(this.formValidate,'carColor',data.data.data.rows[0].car_color || '');
 
-                    if(data.data.data.rows[0].status > 1){
-                        this.busyBtnShow = false
-                    }
+                    this.count_status = data.data.data.rows[0].driver_settle_status
+
                 })
 
             })
 
         })
 
-        this.getOrderInfo({ order_id:this.$route.query.id }).then((data) => {
-            this.$set(this.formValidate,'driverName',data.data.data.driver_name || '');
-            this.$set(this.formValidate,'driverPhone',data.data.data.driver_telephone || '');
-            this.$set(this.formValidate,'carNum',data.data.data.car_no || '');
-            this.$set(this.formValidate,'brandModel',data.data.data.car_template || '');
-            this.$set(this.formValidate,'carType',data.data.data.use_car_type_name || '');
-            this.$set(this.formValidate,'carColor',data.data.data.car_color || '');
-        })
   },
   activated () {
-          
-        this.getDriverLists({ id:'',fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
-            for(let i=0; i<data.data.data.rows.length; i++){
-                this.$set(this.order_data,i,data.data.data.rows[i])
-            }
-            this.pageTotal = data.data.data.total
-        })
 
         this.getUseCarTypeLists({ id:'',status:1,search:'',offset:0,limit:10000 }).then((data) => {
             for(let i=0; i<data.data.data.rows.length; i++){
@@ -501,15 +309,14 @@ export default {
             }
         }).then(()=>{
 
-                this.getReassignApplyLists({ order_id:this.$route.query.id,order_entity_id:'',city_id:'',reassign_manage_status:'',start_time:'',end_time:'',driver_name:'',customer_name:'',passenger_tel:'',offset:0,limit:10 }).then((data) => {
-                    this.order_entity_id = data.data.data.rows[0].entity_id;
+                this.getSettleOrderLists({ id:this.$route.query.id,order_entity_id:'',driver_name:'',customer_name:'',driver_tel:'',driver_settle_status:'',customer_settle_status:'',start_time:'',end_time:'',search:'',offset:0,limit:10 }).then((data) => {
+
                     this.$set(this.formValidate,'indentType',data.data.data.rows[0].order_type);
                     this.$set(this.formValidate,'modelRequire',data.data.data.rows[0].use_car_type_id);
                     this.$set(this.formValidate,'indentStartDate',data.data.data.rows[0].start_date);
                     this.$set(this.formValidate,'indentStartTime',data.data.data.rows[0].start_time);
                     this.$set(this.formValidate,'indentCity',data.data.data.rows[0].city_id);
                     this.$set(this.formValidate,'cusName',data.data.data.rows[0].customer_name);
-                    this.cusId = data.data.data.rows[0].customer_id;
                     this.$set(this.formValidate,'startAddress',data.data.data.rows[0].start_address);
                     this.start_location = data.data.data.rows[0].start_location
                     this.$set(this.formValidate,'endAddress',data.data.data.rows[0].end_address);
@@ -519,29 +326,22 @@ export default {
                     this.$set(this.formValidate,'deiverPrice',data.data.data.rows[0].driver_amount/100);
                     this.$set(this.formValidate,'passengerName',data.data.data.rows[0].passenger_name);
                     this.$set(this.formValidate,'passengerPhone',data.data.data.rows[0].passenger_tel);
-                    this.$set(this.formValidate,'desc',data.data.data.rows[0].comment);
+                    this.$set(this.formValidate,'desc',data.data.data.rows[0].order_comment);
+                    this.$set(this.formValidate,'driver_settle_comment',data.data.data.rows[0].driver_settle_comment);
 
-                    this.addressCity = data.data.data.rows[0].city
-                    this.indentStartAddress = data.data.data.rows[0].start_address;
-                    this.indentEndAddress = data.data.data.rows[0].end_address;
+                    this.$set(this.formValidate,'driverName',data.data.data.rows[0].driver_name || '');
+                    this.$set(this.formValidate,'driverPhone',data.data.data.rows[0].driver_tel || '');
+                    this.$set(this.formValidate,'carNum',data.data.data.rows[0].car_no || '');
+                    this.$set(this.formValidate,'brandModel',data.data.data.rows[0].car_template || '');
+                    this.$set(this.formValidate,'carType',data.data.data.rows[0].car_template || '');
+                    this.$set(this.formValidate,'carColor',data.data.data.rows[0].car_color || '');
 
-                    if(data.data.data.rows[0].status > 1){
-                        this.busyBtnShow = false
-                    }
+                    this.count_status = data.data.data.rows[0].driver_settle_status
 
                 })
 
             })
 
-        })
-
-        this.getOrderInfo({ order_id:this.$route.query.id }).then((data) => {
-            this.$set(this.formValidate,'driverName',data.data.data.driver_name || '');
-            this.$set(this.formValidate,'driverPhone',data.data.data.driver_telephone || '');
-            this.$set(this.formValidate,'carNum',data.data.data.car_no || '');
-            this.$set(this.formValidate,'brandModel',data.data.data.car_template || '');
-            this.$set(this.formValidate,'carType',data.data.data.use_car_type_name || '');
-            this.$set(this.formValidate,'carColor',data.data.data.car_color || '');
         })
   }
 }

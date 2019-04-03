@@ -323,11 +323,7 @@ export default {
           sex:1,
       },
       cardTitle:'新增加盟司机',
-      ruleValidate: {
-          driverTelephone:[
-              { required: true, message: '请填写司机电话', trigger: 'blur' }
-          ]
-      },
+      ruleValidate: {},
       city_arr:[],
       driverIdArr:[],
       allPicModal: '',
@@ -635,6 +631,9 @@ export default {
         for(let i=0; i<data.data.data.rows.length; i++){
             this.$set(this.city_arr,i,data.data.data.rows[i])
         }
+        return data;
+    }).then(data=>{
+        this.$set(this.formValidate,'city',data.data.data.rows[0].id)
     })
   },
   activated () {
@@ -642,6 +641,9 @@ export default {
         for(let i=0; i<data.data.data.rows.length; i++){
             this.$set(this.city_arr,i,data.data.data.rows[i])
         }
+        return data;
+    }).then(data=>{
+        this.$set(this.formValidate,'city',data.data.data.rows[0].id)
     })
   },
 }

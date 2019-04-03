@@ -6,11 +6,11 @@
                 <Form ref="formValidate" :model="formValidate" :rules="ruleValidate" :label-width="120" >
                     <div style="margin:10px 0;">司机信息</div>
                     <FormItem label="姓名" prop="idName">
-                        <Input v-model="formValidate.idName" placeholder="请输入司机姓名" style="width:200px"></Input>
+                        <Input v-model="formValidate.idName" placeholder="请输入司机姓名" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="手机号" prop="telephone" :label-width="120">
-                        <Input v-model="formValidate.telephone" placeholder="请输入手机号" style="width:200px"></Input>
+                        <Input v-model="formValidate.telephone" placeholder="请输入手机号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="身份证正面" prop="IdFrontPic" >
@@ -41,15 +41,15 @@
 
                     <div style="margin:10px 0;">驾驶证信息</div>
                     <FormItem label="驾驶证姓名" prop="driveName">
-                        <Input v-model="formValidate.driveName" placeholder="请输入驾驶证姓名" style="width:200px"></Input>
+                        <Input v-model="formValidate.driveName" placeholder="请输入驾驶证姓名" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="驾驶证领证日期" prop="getDriveDate" :label-width="120">
-                        <DatePicker type="date" placeholder="驾驶证领证日期" v-model="formValidate.getDriveDate" style="width:200px"></DatePicker>
+                        <DatePicker type="date" placeholder="驾驶证领证日期" v-model="formValidate.getDriveDate" style="width:200px" disabled></DatePicker>
                     </FormItem>
 
                     <FormItem label="准驾类型" prop="driveType" :label-width="120">
-                        <Select v-model="formValidate.driveType" placeholder="请选择准驾类型" style="width:200px">
+                        <Select v-model="formValidate.driveType" placeholder="请选择准驾类型" style="width:200px" disabled>
                             <Option value="A1">A1</Option>
                             <Option value="A2">A2</Option>
                             <Option value="A3">A3</Option>
@@ -155,30 +155,30 @@
                     <Row>
                         <Col span="3">
                             <FormItem v-if="car_info_show">
-                                <Button type="error" @click="handleUnbind()" :disabled="disabledStatus">解绑</Button>
+                                <Button type="error" @click="handleUnbind()" :disabled="disabledUnbindStatus">解绑</Button>
                             </FormItem>
                         </Col>
                         <Col span="3">
                             <FormItem>
-                                <Button type="primary" @click="handleBind()" :disabled="disabledStatus">绑定</Button>
+                                <Button type="primary" @click="handleBind()" :disabled="disabledBindStatus">绑定</Button>
                             </FormItem>
                         </Col>
                     </Row>
 
                     <FormItem label="车牌号" prop="authCarNo" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formBindValidate.authCarNo" placeholder="请输入车牌号" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarNo" placeholder="请输入车牌号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="车架号" prop="authVin" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formBindValidate.authVin" placeholder="请输入车架号" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authVin" placeholder="请输入车架号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="注册日期" prop="authCarRegisteredDate" :label-width="120" v-if="car_info_show">
-                        <DatePicker type="date" placeholder="注册日期" v-model="formBindValidate.authCarRegisteredDate" style="width:200px"></DatePicker>
+                        <DatePicker type="date" placeholder="注册日期" v-model="formBindValidate.authCarRegisteredDate" style="width:200px" disabled></DatePicker>
                     </FormItem>
 
                     <FormItem label="车身颜色" prop="authCarColor" :label-width="120" v-if="car_info_show"> 
-                        <Input v-model="formBindValidate.authCarColor" placeholder="车身颜色" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarColor" placeholder="车身颜色" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="行驶证正本面" prop="travelFrontPic" v-if="car_info_show">
@@ -226,14 +226,14 @@
                     
                     <div style="margin:10px 0;">&nbsp;</div>
                     <FormItem label="司机性别" prop="sex" :label-width="120" >
-                        <RadioGroup v-model="formValidate.sex">
+                        <RadioGroup v-model="formValidate.sex" disabled>
                             <Radio :label="0">女</Radio>
                             <Radio :label="1">男</Radio>
                         </RadioGroup>
                     </FormItem>
 
                     <FormItem label="司机住址" prop="address" :label-width="120">
-                        <Input v-model="formValidate.address" placeholder="请输入司机住址" style="width:400px"></Input>
+                        <Input v-model="formValidate.address" placeholder="请输入司机住址" style="width:400px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="身份证反面" prop="IdBackPic" :label-width="120">
@@ -270,11 +270,11 @@
                     <div style="margin:10px 0;">&nbsp;</div>
                     
                     <FormItem label="驾驶证号" prop="driveNo" :label-width="120">
-                        <Input v-model="formValidate.driveNo" placeholder="请输入驾驶证号" style="width:200px"></Input>
+                        <Input v-model="formValidate.driveNo" placeholder="请输入驾驶证号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="有效日期" prop="endDriveDate" :label-width="120">
-                        <DatePicker type="date" placeholder="请输入有效日期" v-model="formValidate.endDriveDate" style="width:200px"></DatePicker>
+                        <DatePicker type="date" placeholder="请输入有效日期" v-model="formValidate.endDriveDate" style="width:200px" disabled></DatePicker>
                     </FormItem>
 
                     <FormItem label="驾驶证副本" prop="driveBackPic" :label-width="120">
@@ -339,20 +339,31 @@
                             <Radio label="1">&nbsp;</Radio>
                         </RadioGroup>
                     </FormItem>
+                    <FormItem style="visibility:hidden;">
+                        <Button type="error" >&nbsp;</Button>
+                    </FormItem>
+                    <FormItem style="visibility:hidden;">
+                        <RadioGroup>
+                            <Radio label="1">&nbsp;</Radio>
+                        </RadioGroup>
+                    </FormItem>
+                    <FormItem style="visibility:hidden;">
+                        <Button type="error" >&nbsp;</Button>
+                    </FormItem>
                     <FormItem label="所有人" prop="authOwner" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formBindValidate.authOwner" placeholder="请输入所有人" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authOwner" placeholder="请输入所有人" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="发动机号" prop="authEngineNo" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formBindValidate.authEngineNo" placeholder="请输入发动机号" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authEngineNo" placeholder="请输入发动机号" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="用车类型" prop="authCarType" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formBindValidate.authCarType" placeholder="请输入用车类型" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarType" placeholder="请输入用车类型" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="品牌车型" prop="authCarTemplate" :label-width="120" v-if="car_info_show">
-                        <Input v-model="formBindValidate.authCarTemplate" placeholder="请输入品牌车型" style="width:200px"></Input>
+                        <Input v-model="formBindValidate.authCarTemplate" placeholder="请输入品牌车型" style="width:200px" disabled></Input>
                     </FormItem>
 
                     <FormItem label="人车合照" prop="carPerPic" :label-width="120" v-if="car_info_show">
@@ -433,6 +444,8 @@ export default {
           ]
       },
       disabledStatus:false,
+      disabledUnbindStatus:false,
+      disabledBindStatus:false,
       allPicModal: '',
       visible: false,
       bindVisible:false,
@@ -480,7 +493,7 @@ export default {
         }
     },
     changeOperateStatus(val){
-        console.log(val)
+        //console.log(val)
         this.is_server = val;
         if(val === 3){
             this.stopVisible = true;
@@ -879,6 +892,7 @@ export default {
                         this.bindVisible = false;
                         this.car_info_show = false;
                         this.$refs['formBindValidate'].resetFields();
+                        this.disabledBindStatus = false;
                     }else{
                         this.$Notice.warning({
                             title: '嘀友提醒',
@@ -902,6 +916,7 @@ export default {
                     this.bindVisible = false;
                     this.car_info_show = false;
                     this.$refs['formBindValidate'].resetFields();
+                    this.disabledBindStatus = false;
                 }else{
                     this.$Notice.warning({
                         title: '嘀友提醒',
@@ -923,7 +938,9 @@ export default {
                 this.bindVisible = false;
                 this.getDriverLists({ id:this.$route.query.id,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:10000 }).then((data) => {
 
-                    this.car_info_show = true
+                    this.car_info_show = true;
+                    this.disabledUnbindStatus = false,
+                    this.disabledBindStatus = true;
                     this.$set(this.formBindValidate,'authCarNo',data.data.data.rows[0].binding_info.car_no);
                     this.$set(this.formBindValidate,'authVin',data.data.data.rows[0].binding_info.frame_no);
                     this.$set(this.formBindValidate,'authCarRegisteredDate',data.data.data.rows[0].binding_info.register_date);
@@ -957,6 +974,13 @@ export default {
 
         this.getDriverLists({ id:this.$route.query.id,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
 
+            if(data.data.data.rows[0].is_binding === 1){
+                this.disabledUnbindStatus = false,
+                this.disabledBindStatus = true;
+            }else{
+                this.disabledUnbindStatus = true,
+                this.disabledBindStatus = false;
+            }
             this.carId = data.data.data.rows[0].binding_id;
             this.$set(this.formValidate,'idName',data.data.data.rows[0].id_name);
             this.$set(this.formValidate,'telephone',data.data.data.rows[0].telephone);
@@ -1025,6 +1049,8 @@ export default {
 
         if(this.$route.query.type === 'expand'){
             this.disabledStatus = true;
+            this.disabledUnbindStatus = true,
+            this.disabledBindStatus = true;
         }
   },
   activated () {
@@ -1033,6 +1059,13 @@ export default {
 
         this.getDriverLists({ id:this.$route.query.id,fleet_id:'',status:'',city_id:'',start_time:'',end_time:'',id_name:'',telephone:'',auth_status:'',is_binding:'',is_server:'',search:'',offset:0,limit:this.pageSize }).then((data) => {
 
+            if(data.data.data.rows[0].is_binding === 1){
+                this.disabledUnbindStatus = false,
+                this.disabledBindStatus = true;
+            }else{
+                this.disabledUnbindStatus = true,
+                this.disabledBindStatus = false;
+            }
             this.carId = data.data.data.rows[0].binding_id;
             this.$set(this.formValidate,'idName',data.data.data.rows[0].id_name);
             this.$set(this.formValidate,'telephone',data.data.data.rows[0].telephone);
@@ -1100,6 +1133,8 @@ export default {
 
         if(this.$route.query.type === 'expand'){
             this.disabledStatus = true;
+            this.disabledUnbindStatus = true,
+            this.disabledBindStatus = true;
         }
   }
 }
